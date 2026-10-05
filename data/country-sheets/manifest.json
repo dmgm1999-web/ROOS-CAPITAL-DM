@@ -1,0 +1,222 @@
+[
+  {
+    "countryCode": "A000",
+    "countryName": "México",
+    "type": "discovery",
+    "gid": "0",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRgzPgCsRliMG1EjM8FNWWrUHqo4ZybtOVwdg91JnYEAavKJtMijiS-Ii_2R8J75jTOZxoNbVyucOpv/pub?gid=0&single=true&output=csv",
+    "file": "A000_discovery.csv",
+    "lines": 105,
+    "bytes": 39568
+  },
+  {
+    "countryCode": "A000",
+    "countryName": "México",
+    "type": "verified",
+    "gid": "794118874",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRgzPgCsRliMG1EjM8FNWWrUHqo4ZybtOVwdg91JnYEAavKJtMijiS-Ii_2R8J75jTOZxoNbVyucOpv/pub?gid=794118874&single=true&output=csv",
+    "file": "A000_verified.csv",
+    "lines": 44,
+    "bytes": 2393
+  },
+  {
+    "countryCode": "B000",
+    "countryName": "España",
+    "type": "discovery",
+    "gid": "0",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ6oDGOAnICJi-GqJQdjYKTr45hqhI6aAx9JKhfnE9-8z1hV-2vz2HY6FZHOLjIoFy42BjddI75-Y1_/pub?gid=0&single=true&output=csv",
+    "file": "B000_discovery.csv",
+    "lines": 114,
+    "bytes": 37742
+  },
+  {
+    "countryCode": "B000",
+    "countryName": "España",
+    "type": "verified",
+    "gid": "794118874",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ6oDGOAnICJi-GqJQdjYKTr45hqhI6aAx9JKhfnE9-8z1hV-2vz2HY6FZHOLjIoFy42BjddI75-Y1_/pub?gid=794118874&single=true&output=csv",
+    "file": "B000_verified.csv",
+    "lines": 44,
+    "bytes": 2092
+  },
+  {
+    "countryCode": "C000",
+    "countryName": "USA",
+    "type": "discovery",
+    "gid": "0",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRZo2YNYEkuqbkiwP0EsfYyuKQPARi1k-QFv2u-1XI3TsLyoiv9Mt9YO2hbLc8Vh21uG02DddoyGekC/pub?gid=0&single=true&output=csv",
+    "file": "C000_discovery.csv",
+    "lines": 105,
+    "bytes": 36867
+  },
+  {
+    "countryCode": "C000",
+    "countryName": "USA",
+    "type": "verified",
+    "gid": "794118874",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRZo2YNYEkuqbkiwP0EsfYyuKQPARi1k-QFv2u-1XI3TsLyoiv9Mt9YO2hbLc8Vh21uG02DddoyGekC/pub?gid=794118874&single=true&output=csv",
+    "file": "C000_verified.csv",
+    "lines": 44,
+    "bytes": 2092
+  },
+  {
+    "countryCode": "D000",
+    "countryName": "Colombia",
+    "type": "discovery",
+    "gid": "0",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQvO076oNxJCx0EVGTx_CJDCT_eudGqtSh_lFO9G6Xu0dRgQepfcXSwGJoXUJeefBhA4SDqSGYdgNJO/pub?gid=0&single=true&output=csv",
+    "file": "D000_discovery.csv",
+    "lines": 105,
+    "bytes": 38771
+  },
+  {
+    "countryCode": "D000",
+    "countryName": "Colombia",
+    "type": "verified",
+    "gid": "794118874",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQvO076oNxJCx0EVGTx_CJDCT_eudGqtSh_lFO9G6Xu0dRgQepfcXSwGJoXUJeefBhA4SDqSGYdgNJO/pub?gid=794118874&single=true&output=csv",
+    "file": "D000_verified.csv",
+    "lines": 44,
+    "bytes": 2092
+  },
+  {
+    "countryCode": "E000",
+    "countryName": "Argentina",
+    "type": "discovery",
+    "gid": "0",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vSKCNsrzwUygwaCZ_s0Q1V4Pxm8T1tG2YKrKRPj_HoKxVrsu6S9CKJhou4aIR3DQ87t94MADovC-AYA/pub?gid=0&single=true&output=csv",
+    "file": "E000_discovery.csv",
+    "lines": 105,
+    "bytes": 38060
+  },
+  {
+    "countryCode": "E000",
+    "countryName": "Argentina",
+    "type": "verified",
+    "gid": "794118874",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vSKCNsrzwUygwaCZ_s0Q1V4Pxm8T1tG2YKrKRPj_HoKxVrsu6S9CKJhou4aIR3DQ87t94MADovC-AYA/pub?gid=794118874&single=true&output=csv",
+    "file": "E000_verified.csv",
+    "lines": 44,
+    "bytes": 2092
+  },
+  {
+    "countryCode": "F000",
+    "countryName": "Chile",
+    "type": "discovery",
+    "gid": "0",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQLnJrl2JJEF6RU4CkPRyACYyzAG5K43pR2c9GvwRbY-NIcXU4zss0l6_9UYXjPZhbNk9rMqSF8O0lz/pub?gid=0&single=true&output=csv",
+    "file": "F000_discovery.csv",
+    "lines": 105,
+    "bytes": 38909
+  },
+  {
+    "countryCode": "F000",
+    "countryName": "Chile",
+    "type": "verified",
+    "gid": "794118874",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQLnJrl2JJEF6RU4CkPRyACYyzAG5K43pR2c9GvwRbY-NIcXU4zss0l6_9UYXjPZhbNk9rMqSF8O0lz/pub?gid=794118874&single=true&output=csv",
+    "file": "F000_verified.csv",
+    "lines": 44,
+    "bytes": 2092
+  },
+  {
+    "countryCode": "G000",
+    "countryName": "Italia",
+    "type": "discovery",
+    "gid": "0",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQfsSKmpHMMyC0b91zcTFR4TTb8ooT08aCJWxg5qGdf9IPjtf7Ynw0DoDEUrvCuzYU9KeXOTAPf9ekN/pub?gid=0&single=true&output=csv",
+    "file": "G000_discovery.csv",
+    "lines": 105,
+    "bytes": 38367
+  },
+  {
+    "countryCode": "G000",
+    "countryName": "Italia",
+    "type": "verified",
+    "gid": "794118874",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQfsSKmpHMMyC0b91zcTFR4TTb8ooT08aCJWxg5qGdf9IPjtf7Ynw0DoDEUrvCuzYU9KeXOTAPf9ekN/pub?gid=794118874&single=true&output=csv",
+    "file": "G000_verified.csv",
+    "lines": 44,
+    "bytes": 2128
+  },
+  {
+    "countryCode": "H000",
+    "countryName": "Francia",
+    "type": "discovery",
+    "gid": "0",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRGjMyCbdtaotdLSKfdStyAyZyancK0cam1oxwlOb3sljn29MvtO2WhxhAdr1Mr4x1tmBHNY8aQTFph/pub?gid=0&single=true&output=csv",
+    "file": "H000_discovery.csv",
+    "lines": 105,
+    "bytes": 38344
+  },
+  {
+    "countryCode": "H000",
+    "countryName": "Francia",
+    "type": "verified",
+    "gid": "794118874",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRGjMyCbdtaotdLSKfdStyAyZyancK0cam1oxwlOb3sljn29MvtO2WhxhAdr1Mr4x1tmBHNY8aQTFph/pub?gid=794118874&single=true&output=csv",
+    "file": "H000_verified.csv",
+    "lines": 44,
+    "bytes": 2128
+  },
+  {
+    "countryCode": "I000",
+    "countryName": "Corea",
+    "type": "discovery",
+    "gid": "0",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vS_4TR7B0z1R7ghhTNYVb4PmmZizMkyyYC-Wz01bV7wjFO18ISKl1ioxbr6-p-Mu1Ltjv4MkgErj4g0/pub?gid=0&single=true&output=csv",
+    "file": "I000_discovery.csv",
+    "lines": 105,
+    "bytes": 30227
+  },
+  {
+    "countryCode": "I000",
+    "countryName": "Corea",
+    "type": "verified",
+    "gid": "794118874",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vS_4TR7B0z1R7ghhTNYVb4PmmZizMkyyYC-Wz01bV7wjFO18ISKl1ioxbr6-p-Mu1Ltjv4MkgErj4g0/pub?gid=794118874&single=true&output=csv",
+    "file": "I000_verified.csv",
+    "lines": 44,
+    "bytes": 2092
+  },
+  {
+    "countryCode": "J000",
+    "countryName": "Japon",
+    "type": "discovery",
+    "gid": "0",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTnNHxfbZzAxdP5oST3CJqz3kXEzfMuvMx1imLiU3Un0npHBIXN96gTProK66SEM_Gcg1NR96qRLC_d/pub?gid=0&single=true&output=csv",
+    "file": "J000_discovery.csv",
+    "lines": 105,
+    "bytes": 32682
+  },
+  {
+    "countryCode": "J000",
+    "countryName": "Japon",
+    "type": "verified",
+    "gid": "794118874",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTnNHxfbZzAxdP5oST3CJqz3kXEzfMuvMx1imLiU3Un0npHBIXN96gTProK66SEM_Gcg1NR96qRLC_d/pub?gid=794118874&single=true&output=csv",
+    "file": "J000_verified.csv",
+    "lines": 44,
+    "bytes": 2092
+  },
+  {
+    "countryCode": "K000",
+    "countryName": "China",
+    "type": "discovery",
+    "gid": "0",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTRgyUOl8ot9ClxYCi2TxtDAtE89JVYdjWVLo10murVnyr16n0vmdpk92lMxyY-7j70pCf8wIzhobEj/pub?gid=0&single=true&output=csv",
+    "file": "K000_discovery.csv",
+    "lines": 105,
+    "bytes": 41036
+  },
+  {
+    "countryCode": "K000",
+    "countryName": "China",
+    "type": "verified",
+    "gid": "794118874",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTRgyUOl8ot9ClxYCi2TxtDAtE89JVYdjWVLo10murVnyr16n0vmdpk92lMxyY-7j70pCf8wIzhobEj/pub?gid=794118874&single=true&output=csv",
+    "file": "K000_verified.csv",
+    "lines": 44,
+    "bytes": 2128
+  }
+]
