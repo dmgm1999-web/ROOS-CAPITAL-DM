@@ -492,6 +492,81 @@ async function startServer() {
         }
       }
 
+      // Also append rows from "anuncios alianza" (formerly "anuncios del mes") into the unified directory
+      try {
+        const alianzaCsv = await fetchWithCache(alianzaSheetUrl);
+        if (alianzaCsv && alianzaCsv.length > 50 && !alianzaCsv.trim().startsWith("<!DOCTYPE")) {
+          const aLines = alianzaCsv.split('\n');
+          let aHIdx = -1;
+          for (let r = 0; r < Math.min(aLines.length, 10); r++) {
+            const lower = (aLines[r] || '').toLowerCase();
+            if (lower.includes('empresa') || lower.includes('marca') || lower.includes('nombre')) {
+              aHIdx = r;
+              break;
+            }
+          }
+          if (aHIdx !== -1) {
+            const aHeaders = parseCsvLine(aLines[aHIdx]).map(h => (h || '').toLowerCase().trim());
+            const aEmpIdx = aHeaders.findIndex(h => h.includes('empresa') || h.includes('marca') || h.includes('nombre'));
+            if (aEmpIdx !== -1) {
+              const aOnlineIdx = aHeaders.findIndex(h => h.includes('online'));
+              const aIntIdx = aHeaders.findIndex(h => h.includes('internacional'));
+              const aProvIdx = aHeaders.findIndex(h => h.includes('proveedor'));
+              const aPaisIdx = aHeaders.findIndex(h => h.includes('pais'));
+              const aEstadoIdx = aHeaders.findIndex(h => h.includes('estado'));
+              const aMunIdx = aHeaders.findIndex(h => h.includes('municipio') || h.includes('ciudad'));
+              const aLogoIdx = aHeaders.findIndex(h => h.includes('logo'));
+              const aCatIdx = aHeaders.findIndex(h => h.includes('categoria') || h.includes('rubro'));
+              const aIdIdx = aHeaders.findIndex(h => h === 'id' || h.includes('id'));
+              const aHashIdx = aHeaders.findIndex(h => h.includes('hashtag'));
+              const aPromoIdx = aHeaders.findIndex(h => h.includes('promo'));
+              const aWspIdx = aHeaders.findIndex(h => (h.includes('whatsapp') || h.includes('telefono')) && !h.includes('wechat'));
+              const aFbIdx = aHeaders.findIndex(h => h.includes('facebook') || h === 'fb');
+              const aIgIdx = aHeaders.findIndex(h => h.includes('instagram') || h === 'ig');
+              const aTkIdx = aHeaders.findIndex(h => h.includes('tiktok') || h === 'tk');
+              const aTwIdx = aHeaders.findIndex(h => h === 'x' || h === 'twitter' || h.includes('twitter'));
+              const aWebIdx = aHeaders.findIndex(h => h.includes('sitio') || h.includes('web') || h.includes('pagina'));
+
+              for (let r = aHIdx + 1; r < aLines.length; r++) {
+                const line = aLines[r];
+                if (!line || !line.trim()) continue;
+                const cols = parseCsvLine(line);
+                const emp = cols[aEmpIdx]?.trim();
+                if (!emp || emp.length < 2 || emp.startsWith('http') || emp.startsWith('+') || emp.startsWith('@')) continue;
+
+                rowCount++;
+                const row = [
+                  rowCount,
+                  escapeCsvCell((aOnlineIdx !== -1 ? cols[aOnlineIdx] : '') || 'También Online'),
+                  escapeCsvCell((aIntIdx !== -1 ? cols[aIntIdx] : '') || 'SI'),
+                  escapeCsvCell((aProvIdx !== -1 ? cols[aProvIdx] : '') || 'SI'),
+                  escapeCsvCell((aPaisIdx !== -1 ? cols[aPaisIdx] : '') || 'Estados Unidos'),
+                  escapeCsvCell(aEstadoIdx !== -1 ? cols[aEstadoIdx] : ''),
+                  escapeCsvCell(aMunIdx !== -1 ? cols[aMunIdx] : ''),
+                  escapeCsvCell(aLogoIdx !== -1 ? cols[aLogoIdx] : ''),
+                  escapeCsvCell((aCatIdx !== -1 ? cols[aCatIdx] : '') || 'General'),
+                  escapeCsvCell((aIdIdx !== -1 ? cols[aIdIdx] : '') || `ALIANZA_${rowCount}`),
+                  escapeCsvCell(emp),
+                  escapeCsvCell(aHashIdx !== -1 ? cols[aHashIdx] : ''),
+                  escapeCsvCell(aPromoIdx !== -1 ? cols[aPromoIdx] : ''),
+                  escapeCsvCell(aWspIdx !== -1 ? cols[aWspIdx] : ''),
+                  escapeCsvCell(aFbIdx !== -1 ? cols[aFbIdx] : ''),
+                  escapeCsvCell(aIgIdx !== -1 ? cols[aIgIdx] : ''),
+                  escapeCsvCell(aTkIdx !== -1 ? cols[aTkIdx] : ''),
+                  escapeCsvCell(aTwIdx !== -1 ? cols[aTwIdx] : ''),
+                  '', '', '', '', '', '', // other socials
+                  escapeCsvCell(aWebIdx !== -1 ? cols[aWebIdx] : ''),
+                  'Alianza'
+                ];
+                combinedRows.push(row.join(','));
+              }
+            }
+          }
+        }
+      } catch (err: any) {
+        console.warn('[server] Notice parsing alianza sheet into unified directory:', err?.message || err);
+      }
+
       if (rowCount > 10) {
         const unifiedCsv = combinedRows.join('\n');
         memoryCache.set(directoryCacheKey, { data: unifiedCsv, timestamp: Date.now() });

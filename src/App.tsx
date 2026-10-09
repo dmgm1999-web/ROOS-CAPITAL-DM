@@ -1519,36 +1519,15 @@ export default function App() {
       }
 
       // 2. Process Primary Sheet (Anuncios)
+      let parsedAnnouncements: Announcement[] = [];
       if (sheetCsv && !sheetCsv.trim().startsWith("<!DOCTYPE") && !sheetCsv.includes("<html")) {
-        const parsedAnnouncements = parseCSVAnuncios(sheetCsv, false);
-        if (parsedAnnouncements.length > 0) {
-          setAnnouncements(parsedAnnouncements);
-          setError(null);
-          // Only save real live sheet data (> 6 items) to localStorage
-          if (parsedAnnouncements.length > 6) {
-            try {
-              localStorage.setItem('roos_announcements_cache', JSON.stringify(parsedAnnouncements));
-            } catch (e) {}
-          }
-
-          // Preload image assets for the first batch of cards for immediate rendering
-          parsedAnnouncements.slice(0, 15).forEach(ad => {
-            if (ad.imagen) {
-              const url = getOptimizedImageUrl(ad.imagen);
-              const img = new Image();
-              img.src = url;
-            }
-          });
-        } else if (announcements.length === 0) {
-          setError('La base de datos parece estar vacía.');
-        }
-      } else if (announcements.length === 0) {
-        setError('No se pudo conectar con la base de datos de anuncios.');
+        parsedAnnouncements = parseCSVAnuncios(sheetCsv, false);
       }
 
-      // 3. Process Diamonds Sheet
+      // 3. Process Alianza Sheet (formerly Diamonds)
+      let parsedDiamonds: Announcement[] = [];
       if (diamondsCsv && !diamondsCsv.trim().startsWith("<!DOCTYPE") && !diamondsCsv.includes("<html")) {
-        const parsedDiamonds = parseCSVAnuncios(diamondsCsv, true);
+        parsedDiamonds = parseCSVAnuncios(diamondsCsv, false);
         if (parsedDiamonds.length > 0) {
           setDiamondsAnnouncements(parsedDiamonds);
           if (parsedDiamonds.length > 6) {
@@ -1557,6 +1536,43 @@ export default function App() {
             } catch (e) {}
           }
         }
+      }
+
+      // Merge both directory announcements and anuncios alianza (deduplicating by title & country)
+      const mergedMap = new Map<string, Announcement>();
+      parsedAnnouncements.forEach(ad => {
+        const key = `${(ad.titulo || '').trim().toLowerCase()}_${(ad.pais || '').trim().toLowerCase()}`;
+        if (key) mergedMap.set(key, ad);
+      });
+      parsedDiamonds.forEach(ad => {
+        const key = `${(ad.titulo || '').trim().toLowerCase()}_${(ad.pais || '').trim().toLowerCase()}`;
+        if (key) {
+          if (!mergedMap.has(key)) {
+            mergedMap.set(key, { ...ad, socio: ad.socio || 'Alianza' });
+          }
+        }
+      });
+
+      const combinedAnnouncements = Array.from(mergedMap.values());
+      if (combinedAnnouncements.length > 0) {
+        setAnnouncements(combinedAnnouncements);
+        setError(null);
+        if (combinedAnnouncements.length > 6) {
+          try {
+            localStorage.setItem('roos_announcements_cache', JSON.stringify(combinedAnnouncements));
+          } catch (e) {}
+        }
+
+        // Preload image assets for the first batch of cards for immediate rendering
+        combinedAnnouncements.slice(0, 15).forEach(ad => {
+          if (ad.imagen) {
+            const url = getOptimizedImageUrl(ad.imagen);
+            const img = new Image();
+            img.src = url;
+          }
+        });
+      } else if (announcements.length === 0) {
+        setError('No se pudo conectar con la base de datos de anuncios.');
       }
 
       setLoading(false);
@@ -1579,8 +1595,10 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const isDiamondsView = false;
-  const activeAnnouncements = announcements;
+  const isDiamondsView = currentView === 'diamonds';
+  const activeAnnouncements = isDiamondsView 
+    ? (diamondsAnnouncements.length > 0 ? diamondsAnnouncements : announcements.filter(a => a.socio?.toLowerCase().includes('alianza') || a.socio?.toLowerCase().includes('diamante')))
+    : announcements;
   const activeSearchTerm = searchTerm;
   const activeSelectedLocation = selectedLocation;
 
@@ -2567,8 +2585,8 @@ export default function App() {
             </div>
 
             {/* MOBILE DIRECTORY HEADER & CONTROLS */}
-            <div className="block md:hidden w-full px-2 pt-3 pb-3" id="mobile-header-wrapper">
-              <div className="text-center w-full pb-3" id="mobile-marketplace-directory">
+            <div className="block md:hidden w-full px-2 pt-14 sm:pt-16 pb-3" id="mobile-header-wrapper">
+              <div className="text-center w-full pt-2 pb-3" id="mobile-marketplace-directory">
                 <span className="text-[#E85B81] font-bold text-[10px] uppercase tracking-[0.2em] font-sans">
                   {t('directory.kicker')}
                 </span>

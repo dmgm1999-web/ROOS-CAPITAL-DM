@@ -78,7 +78,7 @@ export interface AnnouncementCardProps {
   onViewFull?: (ad: Announcement) => void;
 }
 
-export function AnnouncementCard({ 
+export const AnnouncementCard = React.memo(function AnnouncementCard({ 
   ad, 
   isDiamonds = false, 
   isFavorite = false,
@@ -87,16 +87,6 @@ export function AnnouncementCard({
 }: AnnouncementCardProps) {
   const { t, translateCategory, language } = useLanguage();
   const [imgError, setImgError] = useState(false);
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
-
-  useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobileDevice(window.innerWidth < 768);
-    };
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
-    return () => window.removeEventListener('resize', checkIsMobile);
-  }, []);
 
   const isTopSocio = ad.socio?.toLowerCase().includes('top') || ad.socio?.toLowerCase().includes('vip');
   const isTrending = ad.socio?.toLowerCase().includes('tendencia') || ad.categoria?.toLowerCase().includes('tendencia');
@@ -125,7 +115,7 @@ export function AnnouncementCard({
   return (
     <article 
       className={cn(
-        "bg-white rounded-2xl sm:rounded-3xl border border-[#EFE8DF] group relative shadow-[0_4px_20px_rgba(0,0,0,0.03)] w-full overflow-hidden transition-all duration-300 hover:shadow-[0_16px_36px_rgba(232,91,129,0.12)] hover:-translate-y-1",
+        "bg-white rounded-2xl sm:rounded-3xl border border-[#EFE8DF] group relative shadow-xs w-full overflow-hidden transition-all duration-150 hover:shadow-md hover:border-[#E85B81]/40",
         isDiamonds 
           ? "md:flex md:flex-row md:items-stretch md:min-h-[250px]" 
           : (!hasImg ? "min-h-[240px] sm:min-h-[252px] flex flex-col justify-between" : "w-full h-fit"),
@@ -364,5 +354,6 @@ export function AnnouncementCard({
       </div>
     </article>
   );
-}
+});
+
 export default AnnouncementCard;

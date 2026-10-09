@@ -29,7 +29,7 @@ export function RoosLogoText({ className }: RoosLogoTextProps) {
       <span className="inline-flex items-center mx-[0.03em] shrink-0 leading-none">
         <svg 
           viewBox="0 0 86 62" 
-          className="h-[0.78em] w-auto overflow-visible select-none inline-block translate-y-[0.015em]" 
+          className="h-[0.78em] w-auto overflow-visible select-none inline-block translate-y-[0.10em] sm:translate-y-[0.015em]" 
           fill="currentColor"
           aria-label="OO"
         >

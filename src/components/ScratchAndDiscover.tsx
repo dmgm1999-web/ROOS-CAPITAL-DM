@@ -465,7 +465,19 @@ export default function ScratchAndDiscover({
     pickRoundCards();
   };
 
+  const [isMobile, setIsMobile] = useState<boolean>(() => typeof window !== 'undefined' && window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const matchedCards = currentRoundCards.length >= 3 ? currentRoundCards : announcements.slice(0, 3);
+  const cardsToRender = isMobile ? matchedCards.slice(0, 1) : matchedCards;
 
   return (
     <div 
@@ -491,18 +503,22 @@ export default function ScratchAndDiscover({
         <p className="text-xs sm:text-sm md:text-base text-neutral-600 max-w-2xl lg:max-w-4xl mx-auto font-sans">
           {language === 'en' ? (
             <>
-              Touch or scratch any card to customize your quiz and reveal 1 surprise <span className="whitespace-nowrap">brand per round!</span>
+              {isMobile
+                ? 'Touch or scratch your card to customize your quiz and reveal a surprise brand!'
+                : 'Touch or scratch any card to customize your quiz and reveal 1 surprise brand per round!'}
             </>
           ) : (
-            '¡Rasca o toca cualquier tarjeta para personalizar tu quiz y descubrir 1 negocio sorpresa por ronda!'
+            isMobile
+              ? '¡Rasca o toca tu tarjeta para personalizar tu quiz y descubrir un negocio sorpresa por ronda!'
+              : '¡Rasca o toca cualquier tarjeta para personalizar tu quiz y descubrir 1 negocio sorpresa por ronda!'
           )}
         </p>
       </div>
 
-      {/* 3 SCRATCH CARDS - VISIBLE IMMEDIATELY */}
+      {/* SCRATCH CARDS - 1 on mobile, 3 on desktop */}
       <div className="max-w-5xl w-full mx-auto flex flex-col items-center px-4">
-        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-5 mb-5 items-start">
-          {matchedCards.map((ad, idx) => (
+        <div className="w-full max-w-sm md:max-w-none grid grid-cols-1 md:grid-cols-3 gap-5 mb-5 items-start">
+          {cardsToRender.map((ad, idx) => (
             <ScratchCardItem
               key={`${ad.id || ad.titulo}-${idx}-${roundId}`}
               ad={ad}

@@ -54,13 +54,13 @@ export function HeroSection({
       {/* ============================================================ */}
       {/* TOP NAVIGATION BAR (Exact match to reference image) */}
       {/* ============================================================ */}
-      <header className="w-full border-b border-[#EFE8DF] sticky top-0 z-50 bg-[#FAF8F5]/95 backdrop-blur-md transition-all">
-        <div className="max-w-[88rem] mx-auto px-4 sm:px-6 lg:px-10 h-20 flex items-center justify-between">
+      <header className="w-full border-b border-[#EFE8DF] sticky top-0 z-50 bg-[#FAF8F5]/95 backdrop-blur-md">
+        <div className="max-w-[88rem] mx-auto px-3 sm:px-6 lg:px-10 h-16 sm:h-20 flex items-center justify-between">
           
           {/* Left: Brand Logo */}
           <button 
             onClick={() => onNavigateToView('main')}
-            className="flex flex-col items-center cursor-pointer group text-center focus:outline-none"
+            className="flex flex-col items-center cursor-pointer group text-center focus:outline-none shrink-0"
             title="ROOS Capital - Inicio"
           >
             <RoosLogo 
@@ -117,10 +117,12 @@ export function HeroSection({
           </nav>
 
           {/* Right: Actions */}
-          <div className="flex items-center gap-2.5 sm:gap-4">
+          <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-3 shrink-0">
             
-            {/* Language Toggle (Desktop) */}
-            <LanguageToggle className="hidden sm:inline-flex" />
+            {/* Desktop Language Switcher (strictly hidden on mobile, placed exclusively inside hamburger menu on mobile) */}
+            <div className="hidden md:flex items-center">
+              <LanguageToggle className="scale-100 origin-right" />
+            </div>
 
             {/* Search Icon */}
             <button 
@@ -128,30 +130,30 @@ export function HeroSection({
                 if (currentView !== 'main') onNavigateToView('main');
                 onOpenSearch?.();
               }}
-              className="w-9 h-9 flex items-center justify-center rounded-full text-neutral-700 hover:text-[#E85B81] hover:bg-neutral-200/50 transition-colors cursor-pointer"
+              className="w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full text-neutral-700 hover:text-[#E85B81] hover:bg-neutral-200/50 transition-colors cursor-pointer shrink-0"
               title={t('nav.searchTitle')}
               aria-label={t('nav.searchTitle')}
             >
-              <Search className="w-4 h-4" />
+              <Search className="w-3.5 h-3.5 xs:w-4 xs:h-4" />
             </button>
 
-            {/* Log In Link */}
+            {/* Log In Link positioned between search icon and favorites button */}
             <button
               onClick={onOpenLogin}
-              className="hidden sm:inline-block text-sm font-semibold text-neutral-700 hover:text-[#E85B81] transition-colors cursor-pointer px-2 py-1"
+              className="text-[11px] xs:text-xs sm:text-sm font-semibold text-neutral-700 hover:text-[#E85B81] transition-colors cursor-pointer px-1 xs:px-1.5 sm:px-2 py-1 whitespace-nowrap shrink-0"
             >
               {t('nav.login')}
             </button>
 
-            {/* Pink Button next to Log In: Mis Favoritas */}
+            {/* Pink Button next to Log In: Mis Favoritas (on mobile only, counter is hidden to prevent margin overflow) */}
             <button
               onClick={onOpenFavorites || onOpenLogin}
-              className="bg-[#E85B81] hover:bg-[#DE4B73] active:scale-95 text-white font-bold text-xs sm:text-sm px-4 sm:px-6 py-2.5 rounded-full shadow-sm hover:shadow transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5"
+              className="bg-[#E85B81] hover:bg-[#DE4B73] active:scale-95 text-white font-bold text-[10.5px] xs:text-xs sm:text-sm px-2 xs:px-2.5 sm:px-5 py-1.5 sm:py-2.5 rounded-full shadow-xs hover:shadow transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 shrink-0"
             >
               <span>{t('nav.favorites')}</span>
-              <span className="text-white/95 text-sm leading-none">♥</span>
+              <span className="text-white/95 text-xs sm:text-sm leading-none">♥</span>
               {favoritesCount > 0 && (
-                <span className="ml-1 px-1.5 py-0.2 text-[10px] bg-white/25 rounded-full font-bold">
+                <span className="hidden sm:inline-flex ml-1 px-1.5 py-0.2 text-[10px] bg-white/25 rounded-full font-bold">
                   {favoritesCount}
                 </span>
               )}
@@ -160,10 +162,10 @@ export function HeroSection({
             {/* Mobile Hamburger Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden w-9 h-9 flex items-center justify-center text-neutral-700 hover:text-[#E85B81] focus:outline-none"
+              className="md:hidden w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 flex items-center justify-center text-neutral-700 hover:text-[#E85B81] focus:outline-none shrink-0"
               aria-label={t('nav.menu')}
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? <X className="w-4.5 h-4.5 xs:w-5 xs:h-5" /> : <Menu className="w-4.5 h-4.5 xs:w-5 xs:h-5" />}
             </button>
           </div>
         </div>
@@ -223,32 +225,6 @@ export function HeroSection({
             >
               {t('nav.education')}
             </button>
-            <div className="pt-2 border-t border-[#EFE8DF] flex items-center justify-between">
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenLogin();
-                }}
-                className="text-left text-sm font-bold text-neutral-700 hover:text-[#E85B81]"
-              >
-                {t('nav.login')}
-              </button>
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenFavorites?.();
-                }}
-                className="bg-[#E85B81] text-white px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5"
-              >
-                <span>{t('nav.favorites')}</span>
-                <span>♥</span>
-                {favoritesCount > 0 && (
-                  <span className="ml-1 px-1.5 py-0.2 text-[9px] bg-white/25 rounded-full font-bold">
-                    {favoritesCount}
-                  </span>
-                )}
-              </button>
-            </div>
           </div>
         )}
       </header>
@@ -325,46 +301,48 @@ export function HeroSection({
               )}
             </span>
 
-            {/* Massive Serif Title */}
-            <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-[76px] font-bold text-[#18181B] leading-[1.02] tracking-tight mb-6 sm:mb-8">
-              {t('hero.titleLine1')}<br />
-              {t('hero.titleLine2')}<br />
-              <span>{t('hero.titleLine3')}</span>
-            </h1>
+            {/* Massive Serif Title + Centered Mobile Heart placed right beside Discover, Connect, Grow */}
+            <div className="flex items-center justify-between lg:block w-full mb-6 sm:mb-8">
+              <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-[76px] font-bold text-[#18181B] leading-[1.02] tracking-tight">
+                {t('hero.titleLine1')}<br />
+                {t('hero.titleLine2')}<br />
+                <span>{t('hero.titleLine3')}</span>
+              </h1>
 
-            {/* Centered Hand-Drawn Heart on Mobile/Tablet between text and banner */}
-            <div className="lg:hidden flex justify-center w-full my-2 select-none pointer-events-none">
-              <svg 
-                className="w-20 h-20 sm:w-24 sm:h-24 text-[#E85B81] drop-shadow-[0_4px_12px_rgba(232,91,129,0.2)]" 
-                viewBox="0 0 300 300" 
-                fill="none" 
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <defs>
-                  <filter id="crayon-roughness-mobile" x="-10%" y="-10%" width="120%" height="120%">
-                    <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" result="noise" />
-                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G" />
-                  </filter>
-                </defs>
-                <path 
-                  d="M136 112 
-                     C 126 82, 102 42, 72 20 
-                     C 50 4, 24 16, 14 44 
-                     C 3 70, 7 104, 18 142 
-                     C 32 186, 62 230, 96 262 
-                     C 112 278, 126 292, 134 296 
-                     C 142 284, 170 252, 202 212 
-                     C 240 162, 276 110, 280 74 
-                     C 285 42, 270 18, 242 12 
-                     C 212 6, 184 20, 162 48 
-                     C 148 68, 140 92, 136 112 Z" 
-                  stroke="#E85B81" 
-                  strokeWidth="16" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                  filter="url(#crayon-roughness-mobile)"
-                />
-              </svg>
+              {/* Centered Hand-Drawn Heart on Mobile right next to the title words, centered and aligned */}
+              <div className="lg:hidden flex items-center justify-center pl-2 sm:pl-4 shrink-0 select-none pointer-events-none self-center">
+                <svg 
+                  className="w-20 h-20 sm:w-24 sm:h-24 text-[#E85B81] drop-shadow-[0_4px_12px_rgba(232,91,129,0.2)]" 
+                  viewBox="0 0 300 300" 
+                  fill="none" 
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <defs>
+                    <filter id="crayon-roughness-mobile" x="-10%" y="-10%" width="120%" height="120%">
+                      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" result="noise" />
+                      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G" />
+                    </filter>
+                  </defs>
+                  <path 
+                    d="M136 112 
+                       C 126 82, 102 42, 72 20 
+                       C 50 4, 24 16, 14 44 
+                       C 3 70, 7 104, 18 142 
+                       C 32 186, 62 230, 96 262 
+                       C 112 278, 126 292, 134 296 
+                       C 142 284, 170 252, 202 212 
+                       C 240 162, 276 110, 280 74 
+                       C 285 42, 270 18, 242 12 
+                       C 212 6, 184 20, 162 48 
+                       C 148 68, 140 92, 136 112 Z" 
+                    stroke="#E85B81" 
+                    strokeWidth="16" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    filter="url(#crayon-roughness-mobile)"
+                  />
+                </svg>
+              </div>
             </div>
 
             {/* Subheading / Mission */}

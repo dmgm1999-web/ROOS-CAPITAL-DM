@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { Globe } from 'lucide-react';
+import { cn } from '../utils/cn';
 
 interface LanguageToggleProps {
   className?: string;
@@ -12,7 +13,7 @@ export function LanguageToggle({ className = '', showIcon = true }: LanguageTogg
 
   return (
     <div 
-      className={`inline-flex items-center gap-1 bg-white/80 border border-[#EFE8DF] rounded-full p-1 shadow-xs text-xs font-bold ${className}`}
+      className={cn("inline-flex items-center gap-1 bg-white/80 border border-[#EFE8DF] rounded-full p-1 shadow-xs text-xs font-bold", className)}
       role="group"
       aria-label="Seleccionar idioma / Select language"
     >

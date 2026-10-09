@@ -1,15 +1,16 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 /**
  * ROOS Capital - Cursor Aura Light
- * Elegant, soft pink luminous aura right at the cursor tip (no trailing particle trace).
+ * Elegant, soft pink luminous aura right at the cursor tip.
+ * Optimized with high-efficiency requestAnimationFrame throttle, zero continuous idle loops,
+ * and pure CSS transform-gpu to eliminate any hover/cursor lag.
  */
 export default function CursorAura() {
   const auraRef = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Only enable on devices that have a precise pointer/mouse
+    // Only enable on desktop devices that have a fine/accurate mouse pointer
     if (typeof window === 'undefined' || !window.matchMedia('(pointer: fine)').matches) {
       return;
     }
@@ -17,74 +18,77 @@ export default function CursorAura() {
     const aura = auraRef.current;
     if (!aura) return;
 
+    let rafScheduled = false;
     let targetX = -100;
     let targetY = -100;
-    let animId: number;
+
+    const updatePosition = () => {
+      if (aura) {
+        // Centered around 28px width aura (target - 14px)
+        aura.style.transform = `translate3d(${targetX - 14}px, ${targetY - 14}px, 0)`;
+      }
+      rafScheduled = false;
+    };
 
     const onMouseMove = (e: MouseEvent) => {
       targetX = e.clientX;
       targetY = e.clientY;
-      if (!isVisible) setIsVisible(true);
+
+      if (aura.style.opacity !== '1') {
+        aura.style.opacity = '1';
+      }
+
+      if (!rafScheduled) {
+        rafScheduled = true;
+        requestAnimationFrame(updatePosition);
+      }
     };
 
     const onMouseLeave = () => {
-      setIsVisible(false);
+      if (aura) aura.style.opacity = '0';
     };
 
     const onMouseEnter = () => {
-      setIsVisible(true);
-    };
-
-    // Render loop using requestAnimationFrame for 60-120fps hardware acceleration
-    const render = () => {
-      if (aura && targetX >= 0 && targetY >= 0) {
-        // Place the center of the light aura directly at the pointer tip
-        aura.style.transform = `translate3d(${targetX}px, ${targetY}px, 0)`;
-      }
-      animId = requestAnimationFrame(render);
+      if (aura) aura.style.opacity = '1';
     };
 
     window.addEventListener('mousemove', onMouseMove, { passive: true });
-    document.addEventListener('mouseleave', onMouseLeave);
-    document.addEventListener('mouseenter', onMouseEnter);
-
-    animId = requestAnimationFrame(render);
+    document.addEventListener('mouseleave', onMouseLeave, { passive: true });
+    document.addEventListener('mouseenter', onMouseEnter, { passive: true });
 
     return () => {
       window.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseleave', onMouseLeave);
       document.removeEventListener('mouseenter', onMouseEnter);
-      cancelAnimationFrame(animId);
     };
-  }, [isVisible]);
+  }, []);
 
   return (
     <div
       ref={auraRef}
-      className={`fixed top-0 left-0 pointer-events-none z-[99999] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-300 select-none will-change-transform ${
-        isVisible ? 'opacity-100' : 'opacity-0'
-      }`}
+      className="fixed top-0 left-0 pointer-events-none z-[99999] transition-opacity duration-200 select-none opacity-0"
       style={{
-        transform: 'translate3d(-100px, -100px, 0)'
+        transform: 'translate3d(-100px, -100px, 0)',
+        contain: 'layout style paint'
       }}
       aria-hidden="true"
     >
       {/* Outer soft pink aura illumination */}
-      <div className="relative flex items-center justify-center">
+      <div className="relative flex items-center justify-center pointer-events-none">
         {/* Soft atmospheric pink halo */}
         <div 
-          className="w-8 h-8 rounded-full blur-[3px]"
+          className="w-7 h-7 rounded-full opacity-60 pointer-events-none"
           style={{
-            background: 'radial-gradient(circle, rgba(232, 91, 129, 0.45) 0%, rgba(244, 114, 182, 0.2) 40%, rgba(252, 232, 239, 0) 70%)'
+            background: 'radial-gradient(circle, rgba(232, 91, 129, 0.4) 0%, rgba(244, 114, 182, 0.15) 45%, rgba(252, 232, 239, 0) 70%)'
           }}
         />
 
         {/* Luminous concentrated pink center glow point */}
         <div 
-          className="absolute w-2.5 h-2.5 rounded-full"
+          className="absolute w-2 h-2 rounded-full pointer-events-none"
           style={{
-            background: 'radial-gradient(circle, #FFFFFF 15%, #FF7DA1 60%, #E85B81 100%)',
-            boxShadow: '0 0 10px 2px rgba(232, 91, 129, 0.75), 0 0 4px 1px rgba(255, 255, 255, 0.9)'
+            background: 'radial-gradient(circle, #FFFFFF 20%, #FF7DA1 65%, #E85B81 100%)',
+            boxShadow: '0 0 6px 1px rgba(232, 91, 129, 0.65)'
           }}
         />
       </div>
