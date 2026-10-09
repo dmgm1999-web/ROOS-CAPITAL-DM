@@ -14,6 +14,8 @@ import {
   ChevronUp,
   Tag
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import { translateCountryName } from '../utils/countryUtils';
 
 export interface LocationFilterProps {
   isOpen: boolean;
@@ -70,6 +72,7 @@ export function LocationFilterPopover({
   countProveedor,
   totalResultsCount
 }: LocationFilterProps) {
+  const { language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'modality' | 'geo'>('all');
   const [expandedSections, setExpandedSections] = useState({
@@ -391,7 +394,7 @@ export function LocationFilterPopover({
                           }`}>
                             {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                           </div>
-                          <span className="truncate">{country}</span>
+                          <span className="truncate">{translateCountryName(country, language)}</span>
                         </div>
                         <span className="text-[9px] font-bold text-neutral-400 ml-1">
                           {count}

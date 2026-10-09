@@ -11,39 +11,112 @@ export interface CountryInfo {
   code: string;
 }
 
-export function getCountryInfo(rawCountry?: string, rawState?: string, rawCity?: string): CountryInfo {
+export const COUNTRY_DICTIONARY: Record<string, { es: string; en: string; flag: string; code: string }> = {
+  MX: { es: 'México', en: 'Mexico', flag: '🇲🇽', code: 'MX' },
+  US: { es: 'Estados Unidos', en: 'United States', flag: '🇺🇸', code: 'US' },
+  ES: { es: 'España', en: 'Spain', flag: '🇪🇸', code: 'ES' },
+  CO: { es: 'Colombia', en: 'Colombia', flag: '🇨🇴', code: 'CO' },
+  AR: { es: 'Argentina', en: 'Argentina', flag: '🇦🇷', code: 'AR' },
+  CL: { es: 'Chile', en: 'Chile', flag: '🇨🇱', code: 'CL' },
+  PE: { es: 'Perú', en: 'Peru', flag: '🇵🇪', code: 'PE' },
+  IT: { es: 'Italia', en: 'Italy', flag: '🇮🇹', code: 'IT' },
+  JP: { es: 'Japón', en: 'Japan', flag: '🇯🇵', code: 'JP' },
+  FR: { es: 'Francia', en: 'France', flag: '🇫🇷', code: 'FR' },
+  KR: { es: 'Corea del Sur', en: 'South Korea', flag: '🇰🇷', code: 'KR' },
+  CN: { es: 'China', en: 'China', flag: '🇨🇳', code: 'CN' },
+  VE: { es: 'Venezuela', en: 'Venezuela', flag: '🇻🇪', code: 'VE' },
+  EC: { es: 'Ecuador', en: 'Ecuador', flag: '🇪🇨', code: 'EC' },
+  GT: { es: 'Guatemala', en: 'Guatemala', flag: '🇬🇹', code: 'GT' },
+  CR: { es: 'Costa Rica', en: 'Costa Rica', flag: '🇨🇷', code: 'CR' },
+  PA: { es: 'Panamá', en: 'Panama', flag: '🇵🇦', code: 'PA' },
+};
+
+/**
+ * Universal country name translation function.
+ * Accurately translates country names into English when user selects EN,
+ * and maintains proper Spanish when user selects ES.
+ */
+export function translateCountryName(rawCountry?: string, lang: 'es' | 'en' = 'es'): string {
+  if (!rawCountry) return '';
+  const trimmed = rawCountry.trim();
+  const lower = trimmed.toLowerCase();
+
+  // Special cases
+  if (lower === 'beneficencia' || lower.includes('beneficencia')) {
+    return lang === 'en' ? 'Charity / Non-Profit' : 'Beneficencia';
+  }
+  if (lower === 'internacional' || lower === 'international') {
+    return lang === 'en' ? 'International' : 'Internacional';
+  }
+  if (lower === 'global') {
+    return 'Global';
+  }
+  if (lower === 'todos' || lower === 'todos los países' || lower === 'todos los paises' || lower === 'all' || lower === 'all countries') {
+    return lang === 'en' ? 'All Countries' : 'Todos los países';
+  }
+  if (lower === 'otro' || lower === 'otros' || lower === 'other') {
+    return lang === 'en' ? 'Other' : 'Otro';
+  }
+
+  // Detect code and map
+  const info = getCountryInfo(trimmed);
+  const entry = COUNTRY_DICTIONARY[info.code];
+  if (entry) {
+    return lang === 'en' ? entry.en : entry.es;
+  }
+
+  return trimmed;
+}
+
+export function getCountryInfo(rawCountry?: string, rawState?: string, rawCity?: string, lang: 'es' | 'en' = 'es'): CountryInfo {
   const c = (rawCountry || '').toLowerCase().trim();
   const combined = `${rawCountry || ''} ${rawState || ''} ${rawCity || ''}`.toLowerCase().trim();
+
+  const resolve = (code: string): CountryInfo => {
+    const entry = COUNTRY_DICTIONARY[code];
+    if (entry) {
+      return {
+        flag: entry.flag,
+        name: lang === 'en' ? entry.en : entry.es,
+        code: entry.code
+      };
+    }
+    return {
+      flag: '🇲🇽',
+      name: lang === 'en' ? 'Mexico' : 'México',
+      code: 'MX'
+    };
+  };
 
   // 1. Direct country matches have highest priority
   // Italia
   if (c === 'it' || c === 'italia' || c === 'italy' || c.startsWith('italia') || c.startsWith('italy')) {
-    return { flag: '🇮🇹', name: 'Italia', code: 'IT' };
+    return resolve('IT');
   }
 
   // Japón
   if (c === 'jp' || c === 'japon' || c === 'japón' || c === 'japan' || c.startsWith('japon') || c.startsWith('japón')) {
-    return { flag: '🇯🇵', name: 'Japón', code: 'JP' };
+    return resolve('JP');
   }
 
   // Francia
   if (c === 'fr' || c === 'francia' || c === 'france' || c.startsWith('francia') || c.startsWith('france')) {
-    return { flag: '🇫🇷', name: 'Francia', code: 'FR' };
+    return resolve('FR');
   }
 
   // Corea del Sur
   if (c === 'kr' || c === 'corea del sur' || c === 'core del sur' || c === 'corea' || c === 'korea' || c === 'south korea' || c.includes('corea') || c.includes('korea')) {
-    return { flag: '🇰🇷', name: 'Corea del Sur', code: 'KR' };
+    return resolve('KR');
   }
 
   // China
   if (c === 'cn' || c === 'china' || c.startsWith('china')) {
-    return { flag: '🇨🇳', name: 'China', code: 'CN' };
+    return resolve('CN');
   }
 
   // España
   if (c === 'es' || c === 'españa' || c === 'espana' || c === 'spain' || c.startsWith('españa') || c.startsWith('espana')) {
-    return { flag: '🇪🇸', name: 'España', code: 'ES' };
+    return resolve('ES');
   }
 
   // USA / Estados Unidos
@@ -56,68 +129,68 @@ export function getCountryInfo(rawCountry?: string, rawState?: string, rawCity?:
     c === 'estados unidos' || 
     c === 'united states'
   ) {
-    return { flag: '🇺🇸', name: 'USA', code: 'US' };
+    return resolve('US');
   }
 
   // Colombia
   if (c === 'co' || c === 'colombia' || c.startsWith('colombia')) {
-    return { flag: '🇨🇴', name: 'Colombia', code: 'CO' };
+    return resolve('CO');
   }
 
   // Argentina
   if (c === 'ar' || c === 'argentina' || c.startsWith('argentina')) {
-    return { flag: '🇦🇷', name: 'Argentina', code: 'AR' };
+    return resolve('AR');
   }
 
   // Chile
   if (c === 'cl' || c === 'chile' || c.startsWith('chile')) {
-    return { flag: '🇨🇱', name: 'Chile', code: 'CL' };
+    return resolve('CL');
   }
 
   // Perú
   if (c === 'pe' || c === 'perú' || c === 'peru' || c.startsWith('perú') || c.startsWith('peru')) {
-    return { flag: '🇵🇪', name: 'Perú', code: 'PE' };
+    return resolve('PE');
   }
 
   // Venezuela
   if (c === 've' || c === 'venezuela' || c.startsWith('venezuela')) {
-    return { flag: '🇻🇪', name: 'Venezuela', code: 'VE' };
+    return resolve('VE');
   }
 
   // Ecuador
   if (c === 'ec' || c === 'ecuador' || c.startsWith('ecuador')) {
-    return { flag: '🇪🇨', name: 'Ecuador', code: 'EC' };
+    return resolve('EC');
   }
 
   // México
   if (c === 'mx' || c === 'méxico' || c === 'mexico' || c.startsWith('méxico') || c.startsWith('mexico')) {
-    return { flag: '🇲🇽', name: 'México', code: 'MX' };
+    return resolve('MX');
   }
 
   // 2. Fallback secondary detection on combined location string
   // Italia
   if (combined.includes('italia') || combined.includes('italy') || combined.includes('roma') || combined.includes('milan') || combined.includes('milán') || combined.includes('florencia') || combined.includes('firenze') || combined.includes('venecia') || combined.includes('venezia') || combined.includes('bolonia') || combined.includes('nápoles') || combined.includes('turín') || combined.includes('lombardía')) {
-    return { flag: '🇮🇹', name: 'Italia', code: 'IT' };
+    return resolve('IT');
   }
 
   // Japón
   if (combined.includes('japón') || combined.includes('japon') || combined.includes('japan') || combined.includes('tokyo') || combined.includes('tokio') || combined.includes('osaka') || combined.includes('kyoto') || combined.includes('shibuya') || combined.includes('ginza')) {
-    return { flag: '🇯🇵', name: 'Japón', code: 'JP' };
+    return resolve('JP');
   }
 
   // Francia
   if (combined.includes('francia') || combined.includes('france') || combined.includes('parís') || combined.includes('paris') || combined.includes('lyon') || combined.includes('marsella') || combined.includes('bordeaux') || combined.includes('île-de-france')) {
-    return { flag: '🇫🇷', name: 'Francia', code: 'FR' };
+    return resolve('FR');
   }
 
   // Corea del Sur
   if (combined.includes('corea') || combined.includes('korea') || combined.includes('seúl') || combined.includes('seoul') || combined.includes('busan') || combined.includes('gangnam') || combined.includes('hongdae')) {
-    return { flag: '🇰🇷', name: 'Corea del Sur', code: 'KR' };
+    return resolve('KR');
   }
 
   // China
   if (combined.includes('china') || combined.includes('shanghái') || combined.includes('shanghai') || combined.includes('beijing') || combined.includes('pekin') || combined.includes('pekín') || combined.includes('cantón') || combined.includes('guangzhou') || combined.includes('shenzhen') || combined.includes('guangdong') || combined.includes('hangzhou')) {
-    return { flag: '🇨🇳', name: 'China', code: 'CN' };
+    return resolve('CN');
   }
 
   // USA
@@ -132,46 +205,46 @@ export function getCountryInfo(rawCountry?: string, rawState?: string, rawCity?:
     combined.includes('austin') ||
     combined.includes('houston')
   ) {
-    return { flag: '🇺🇸', name: 'USA', code: 'US' };
+    return resolve('US');
   }
 
   // Colombia
   if (combined.includes('colombia') || combined.includes('bogotá') || combined.includes('bogota') || combined.includes('medellín') || combined.includes('medellin') || combined.includes('cali')) {
-    return { flag: '🇨🇴', name: 'Colombia', code: 'CO' };
+    return resolve('CO');
   }
 
   // España
   if (combined.includes('españa') || combined.includes('spain') || combined.includes('madrid') || combined.includes('barcelona') || combined.includes('valencia') || combined.includes('sevilla') || combined.includes('bilbao')) {
-    return { flag: '🇪🇸', name: 'España', code: 'ES' };
+    return resolve('ES');
   }
 
   // Argentina
   if (combined.includes('argentina') || combined.includes('buenos aires') || combined.includes('córdoba') || combined.includes('rosario')) {
-    return { flag: '🇦🇷', name: 'Argentina', code: 'AR' };
+    return resolve('AR');
   }
 
   // Chile
   if (combined.includes('chile') || combined.includes('santiago') || combined.includes('valparaíso')) {
-    return { flag: '🇨🇱', name: 'Chile', code: 'CL' };
+    return resolve('CL');
   }
 
   // Perú
   if (combined.includes('perú') || combined.includes('peru') || combined.includes('lima')) {
-    return { flag: '🇵🇪', name: 'Perú', code: 'PE' };
+    return resolve('PE');
   }
 
   // Venezuela
   if (combined.includes('venezuela') || combined.includes('caracas')) {
-    return { flag: '🇻🇪', name: 'Venezuela', code: 'VE' };
+    return resolve('VE');
   }
 
   // Ecuador
   if (combined.includes('ecuador') || combined.includes('quito') || combined.includes('guayaquil')) {
-    return { flag: '🇪🇨', name: 'Ecuador', code: 'EC' };
+    return resolve('EC');
   }
 
   // Default: México
-  return { flag: '🇲🇽', name: 'México', code: 'MX' };
+  return resolve('MX');
 }
 
 /**

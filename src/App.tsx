@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Newspaper, 
@@ -61,7 +61,7 @@ import { HeroSection } from './components/HeroSection';
 import { AutocroppedLogo } from './components/AutocroppedLogo';
 import LoginModal from './components/LoginModal';
 import CursorAura from './components/CursorAura';
-import { getCountryInfo, interleaveAnnouncementsByCountry, CountryFlag } from './utils/countryUtils';
+import { getCountryInfo, interleaveAnnouncementsByCountry, CountryFlag, translateCountryName } from './utils/countryUtils';
 import { getCanonicalCategory } from './utils/categoryUtils';
 import FundadorasTicker, { hasAnuncioImage } from './components/FundadorasTicker';
 import NoticiasTicker from './components/NoticiasTicker';
@@ -369,7 +369,8 @@ function getMexicoStateAndMunicipio(direccion: string): { state: string; municip
 }
 
 const DIRECT_PRIMARY_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyC2jBz4JtAra4VtCNQSbCyDf28VB7Her9WpYdfuOS1eTBY9lY5ygYT9wDHUIbG4PvGlYEgDvpu6OT/pub?gid=0&single=true&output=csv';
-const DIRECT_DIAMONDS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyC2jBz4JtAra4VtCNQSbCyDf28VB7Her9WpYdfuOS1eTBY9lY5ygYT9wDHUIbG4PvGlYEgDvpu6OT/pub?gid=2129723216&single=true&output=csv';
+// "anuncios alianza" (formerly "anuncios del mes" / diamonds)
+const DIRECT_DIAMONDS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyC2jBz4JtAra4VtCNQSbCyDf28VB7Her9WpYdfuOS1eTBY9lY5ygYT9wDHUIbG4PvGlYEgDvpu6OT/pub?sheet=anuncios+alianza&output=csv';
 const DIRECT_CONFIG_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyC2jBz4JtAra4VtCNQSbCyDf28VB7Her9WpYdfuOS1eTBY9lY5ygYT9wDHUIbG4PvGlYEgDvpu6OT/pub?gid=859336638&single=true&output=csv';
 
 async function fetchCsvWithFallback(apiEndpoint: string, directUrl: string): Promise<string> {
@@ -1093,6 +1094,116 @@ export default function App() {
       'https://raw.githubusercontent.com/dmgm1999-web/Roos-Capital-MX-Assets/main/RCBANNER%20(15).png'
     ];
   });
+  // Live Online Visitors Counter System:
+  // Base 8,000 visitors, fluctuating every 3 hours across 11,000 and 30,000.
+  // Last digit constantly alternates strictly between 3, 6, and 9 (never 0).
+  // Updates organically every 3 to 6 seconds using strict delta blocks: [3, 30, 33, 333, 6, 60, 66, 9, 90].
+  // Directly factors in real active visitors detected on the site.
+  const ALLOWED_DELTA_BLOCKS = [3, 30, 33, 333, 6, 60, 66, 9, 90] as const;
+  const ALLOWED_LAST_DIGITS = [3, 6, 9] as const;
+
+  function getBaseVisitorTarget(timestamp = Date.now()): number {
+    const period = 12 * 60 * 60 * 1000; // 12-hour wave with 3-hour stages
+    const progress = (timestamp % period) / period;
+    if (progress < 0.25) {
+      const t = progress / 0.25;
+      return 8000 + Math.round((11000 - 8000) * (0.5 - 0.5 * Math.cos(Math.PI * t)));
+    } else if (progress < 0.5) {
+      const t = (progress - 0.25) / 0.25;
+      return 11000 + Math.round((30000 - 11000) * (0.5 - 0.5 * Math.cos(Math.PI * t)));
+    } else if (progress < 0.75) {
+      const t = (progress - 0.5) / 0.25;
+      return 30000 - Math.round((30000 - 11000) * (0.5 - 0.5 * Math.cos(Math.PI * t)));
+    } else {
+      const t = (progress - 0.75) / 0.25;
+      return 11000 - Math.round((11000 - 8000) * (0.5 - 0.5 * Math.cos(Math.PI * t)));
+    }
+  }
+
+  function pickNextLastDigit(currentLastDigit?: number): number {
+    const candidates = ALLOWED_LAST_DIGITS.filter(d => d !== currentLastDigit);
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  const [organicVisitorsCount, setOrganicVisitorsCount] = useState<number>(() => {
+    const target = getBaseVisitorTarget();
+    const initialLast = ALLOWED_LAST_DIGITS[Math.floor(Math.random() * ALLOWED_LAST_DIGITS.length)];
+    return Math.floor(target / 10) * 10 + initialLast;
+  });
+  const [realActiveVisitors, setRealActiveVisitors] = useState<number>(1);
+
+  // Periodic organic fluctuation every 3 to 6 seconds using strict delta blocks & alternating last digit
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    const scheduleTick = () => {
+      const delay = Math.floor(Math.random() * 3000) + 3000; // strictly 3 to 6 seconds (3000ms - 6000ms)
+      timeoutId = setTimeout(() => {
+        setOrganicVisitorsCount(prev => {
+          const target = getBaseVisitorTarget();
+          const block = ALLOWED_DELTA_BLOCKS[Math.floor(Math.random() * ALLOWED_DELTA_BLOCKS.length)];
+          
+          // Organic directional bias towards the current 3-hour base target
+          const isAdd = prev < 8000 ? true : (prev > 31000 ? false : (prev < target ? Math.random() < 0.72 : Math.random() < 0.28));
+          const provisional = prev + (isAdd ? block : -block);
+          const clamped = Math.max(8000, provisional);
+          
+          const tens = Math.floor(clamped / 10) * 10;
+          const nextLast = pickNextLastDigit(prev % 10);
+          return tens + nextLast;
+        });
+        scheduleTick();
+      }, delay);
+    };
+
+    scheduleTick();
+    return () => clearTimeout(timeoutId);
+  }, []);
+
+  // Real visitor heartbeat tracker: pings /api/visitors/ping and counts genuine active users
+  useEffect(() => {
+    let sessionId = '';
+    try {
+      sessionId = sessionStorage.getItem('roos_visitor_session') || '';
+      if (!sessionId) {
+        sessionId = 'v_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+        sessionStorage.setItem('roos_visitor_session', sessionId);
+      }
+    } catch {}
+
+    const sendHeartbeat = async () => {
+      try {
+        const res = await fetch('/api/visitors/ping', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && typeof data.activeCount === 'number') {
+            setRealActiveVisitors(Math.max(1, data.activeCount));
+          }
+        }
+      } catch {
+        // Fallback gracefully on network error
+      }
+    };
+
+    sendHeartbeat();
+    const interval = setInterval(sendHeartbeat, 25000); // Heartbeat every 25s
+    return () => clearInterval(interval);
+  }, []);
+
+  // Compute total display visitors ensuring last digit is strictly 3, 6, or 9
+  const onlineVisitorsDisplay = useMemo(() => {
+    const realBonus = (realActiveVisitors > 1 ? (realActiveVisitors - 1) * 3 : 0);
+    const total = organicVisitorsCount + realBonus;
+    const tens = Math.floor(total / 10) * 10;
+    const last = organicVisitorsCount % 10;
+    const validLast = [3, 6, 9].includes(last) ? last : 6;
+    return tens + validLast;
+  }, [organicVisitorsCount, realActiveVisitors]);
+
   const [currentView, setCurrentView] = useState<AppView>(() => getViewFromLocation());
 
   const navigateToView = useCallback((view: AppView, replace = false) => {
@@ -2185,6 +2296,26 @@ export default function App() {
         <div className="max-w-[100rem] 2xl:max-w-[115rem] 3xl:max-w-[135rem] w-full mx-auto px-4 pt-0" id="main-view-wrapped-container">
           <header className="flex flex-col items-center mb-0 relative w-full" id="main-view-header">
             
+            {/* Live Online Visitors Pill placed exactly where cursor light is in reference image */}
+            <div 
+              className="absolute top-1 sm:top-2 md:top-3 right-1 sm:right-4 md:right-8 lg:right-12 z-20 pointer-events-auto"
+              id="live-online-visitors-pill"
+            >
+              <div className="inline-flex items-center gap-2 bg-white/95 backdrop-blur-xs border border-[#EFE8DF] px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full shadow-xs text-[11px] sm:text-xs font-medium text-neutral-600 select-none hover:border-[#E85B81]/40 transition-colors">
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span className="font-bold text-neutral-800 tabular-nums">
+                  {new Intl.NumberFormat('en-US').format(onlineVisitorsDisplay)}
+                </span>
+                <span>
+                  <span className="hidden sm:inline">{language === 'en' ? 'online visitors' : 'visitantes online'}</span>
+                  <span className="sm:hidden">{language === 'en' ? 'online' : 'en línea'}</span>
+                </span>
+              </div>
+            </div>
+
             {/* DESKTOP DIRECTORY HEADER */}
             <div className="hidden md:block w-full mt-4" id="desktop-header-wrapper">
               <div className="text-center w-full py-8 px-4 flex flex-col justify-center items-center" id="marketplace-directory">
@@ -2224,7 +2355,7 @@ export default function App() {
                       className={`group relative h-14 w-14 rounded-full flex items-center justify-center focus:outline-none hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm border cursor-pointer ${
                         activeLocationFilterCount > 0 
                           ? 'border-[#E85B81] bg-[#FCE8EF] text-[#E85B81]' 
-                          : 'bg-white border-[#E85B81]/40 hover:border-[#E85B81] text-[#E85B81] hover:bg-[#FCE8EF]/30'
+                          : 'bg-white border-[#EFE8DF] hover:border-[#E85B81] text-[#E85B81] hover:bg-[#FFF9FB]'
                       }`}
                       id="desktop-location-toggle-btn"
                       title={language === 'en' ? 'Filters' : 'Filtros'}
@@ -2374,19 +2505,22 @@ export default function App() {
                         </button>
                       </span>
                     )}
-                    {selectedCountries.map(c => (
-                      <span key={c} className="inline-flex items-center gap-1.5 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-2xs">
-                        <CountryFlag countryCode={getCountryInfo(c).code} className="w-4 h-3 shrink-0" title={c} />
-                        <span>{c}</span>
-                        <button 
-                          onClick={() => handleCountrySelection([])} 
-                          className="hover:text-[#DE4B73] p-0.5 rounded-full hover:bg-[#E85B81]/15 transition-colors"
-                          title={language === 'en' ? `Remove ${c}` : `Quitar ${c}`}
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
+                    {selectedCountries.map(c => {
+                      const cName = translateCountryName(c, language);
+                      return (
+                        <span key={c} className="inline-flex items-center gap-1.5 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-2xs">
+                          <CountryFlag countryCode={getCountryInfo(c).code} className="w-4 h-3 shrink-0" title={cName} />
+                          <span>{cName}</span>
+                          <button 
+                            onClick={() => handleCountrySelection([])} 
+                            className="hover:text-[#DE4B73] p-0.5 rounded-full hover:bg-[#E85B81]/15 transition-colors"
+                            title={language === 'en' ? `Remove ${cName}` : `Quitar ${c}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      );
+                    })}
                     {selectedStates.map(s => (
                       <span key={s} className="inline-flex items-center gap-1.5 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-2xs">
                         <Building2 className="w-3 h-3 text-[#E85B81]" />
@@ -2471,7 +2605,7 @@ export default function App() {
                     className={`group relative w-full h-full rounded-full flex items-center justify-center focus:outline-none transition-all shadow-sm border ${
                       activeLocationFilterCount > 0 
                         ? 'border-[#E85B81] bg-[#FCE8EF] text-[#E85B81]' 
-                        : 'bg-white border-[#E85B81]/40 hover:border-[#E85B81] text-[#E85B81] hover:bg-[#FCE8EF]/30'
+                        : 'bg-white border-[#EFE8DF] hover:border-[#E85B81] text-[#E85B81] hover:bg-[#FFF9FB]'
                     }`}
                     title={language === 'en' ? 'Filters' : 'Filtros'}
                     aria-label={language === 'en' ? 'Filters' : 'Filtros'}
@@ -2620,19 +2754,22 @@ export default function App() {
                       </button>
                     </span>
                   )}
-                  {selectedCountries.map(c => (
-                    <span key={c} className="inline-flex items-center gap-1 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2 py-0.5 rounded-full text-[10.5px] font-bold shadow-2xs">
-                      <CountryFlag countryCode={getCountryInfo(c).code} className="w-3.5 h-2.5 shrink-0" title={c} />
-                      <span>{c}</span>
-                      <button 
-                        onClick={() => handleCountrySelection([])} 
-                        className="hover:text-[#DE4B73] p-0.5 rounded-full hover:bg-[#E85B81]/15 transition-colors"
-                        title={language === 'en' ? `Remove ${c}` : `Quitar ${c}`}
-                      >
-                        <X className="w-2.5 h-2.5" />
-                      </button>
-                    </span>
-                  ))}
+                  {selectedCountries.map(c => {
+                    const cName = translateCountryName(c, language);
+                    return (
+                      <span key={c} className="inline-flex items-center gap-1 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2 py-0.5 rounded-full text-[10.5px] font-bold shadow-2xs">
+                        <CountryFlag countryCode={getCountryInfo(c).code} className="w-3.5 h-2.5 shrink-0" title={cName} />
+                        <span>{cName}</span>
+                        <button 
+                          onClick={() => handleCountrySelection([])} 
+                          className="hover:text-[#DE4B73] p-0.5 rounded-full hover:bg-[#E85B81]/15 transition-colors"
+                          title={language === 'en' ? `Remove ${cName}` : `Quitar ${c}`}
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </span>
+                    );
+                  })}
                   {selectedStates.map(s => (
                     <span key={s} className="inline-flex items-center gap-1 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2 py-0.5 rounded-full text-[10.5px] font-bold shadow-2xs">
                       <Building2 className="w-2.5 h-2.5 text-[#E85B81]" />

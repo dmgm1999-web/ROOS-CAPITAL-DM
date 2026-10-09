@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Sparkles, Globe, MapPin, Building, Tag, RotateCcw, X, Lock } from 'lucide-react';
 import { Announcement } from '../App';
 import { useLanguage } from '../context/LanguageContext';
+import { translateCountryName } from '../utils/countryUtils';
 import { playClickSound } from '../utils/sound';
 import { cn } from '../utils/cn';
 import { AnnouncementCard } from './AnnouncementCard';
@@ -574,7 +575,7 @@ export default function ScratchAndDiscover({
                 >
                   <option value="">{language === 'en' ? '🌎 Any country' : '🌎 Cualquier país'}</option>
                   {availableCountries.map(c => (
-                    <option key={c} value={c}>{c}</option>
+                    <option key={c} value={c}>{translateCountryName(c, language)}</option>
                   ))}
                 </select>
               </div>

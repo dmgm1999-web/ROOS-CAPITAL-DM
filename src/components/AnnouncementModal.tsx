@@ -16,7 +16,7 @@ import {
 import { Announcement } from '../App';
 import { getOptimizedImageUrl } from '../utils/imageUtils';
 import { useLanguage } from '../context/LanguageContext';
-import { CountryFlag, getCountryInfo } from '../utils/countryUtils';
+import { CountryFlag, getCountryInfo, translateCountryName } from '../utils/countryUtils';
 import { 
   formatWhatsAppUrl, 
   formatInstagramUrl, 
@@ -49,7 +49,7 @@ interface AnnouncementModalProps {
 }
 
 export default function AnnouncementModal({ ad, onClose }: AnnouncementModalProps) {
-  const { t, translateCategory } = useLanguage();
+  const { t, translateCategory, language } = useLanguage();
   const [imgError, setImgError] = useState(false);
 
   // Close on Escape key
@@ -112,15 +112,16 @@ export default function AnnouncementModal({ ad, onClose }: AnnouncementModalProp
     { key: 'web', label: 'Sitio Web', icon: Globe, url: webUrl, color: 'hover:bg-brand-orange hover:text-white' },
   ].filter(s => Boolean(s.url && s.url.trim()));
 
-  const countryInfo = getCountryInfo(ad.extractedCountry || ad.pais, ad.extractedState || ad.estado, ad.extractedMunicipio || ad.municipio);
+  const countryInfo = getCountryInfo(ad.extractedCountry || ad.pais, ad.extractedState || ad.estado, ad.extractedMunicipio || ad.municipio, language);
 
   const locationParts = [
     ad.ciudad || ad.municipio, 
     ad.estado, 
-    ad.pais
+    ad.pais ? translateCountryName(ad.pais, language) : ''
   ]
     .filter(Boolean)
     .map(s => String(s).replace(/^[-–—\s]+/, '').trim())
+    .map(part => translateCountryName(part, language))
     .filter(s => {
       const lower = s.toLowerCase();
       return (

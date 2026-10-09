@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { translateCountryName } from '../utils/countryUtils';
 
 export type Language = 'es' | 'en';
 
@@ -398,6 +399,7 @@ interface LanguageContextType {
   toggleLanguage: () => void;
   t: (key: TranslationKey, fallback?: string) => string;
   translateCategory: (categoryName: string) => string;
+  translateCountry: (countryName: string) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -515,8 +517,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     return trimmed;
   };
 
+  const translateCountry = (countryName: string): string => {
+    return translateCountryName(countryName, language);
+  };
+
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, toggleLanguage, t, translateCategory }}>
+    <LanguageContext.Provider value={{ language, setLanguage, toggleLanguage, t, translateCategory, translateCountry }}>
       {children}
     </LanguageContext.Provider>
   );
@@ -528,6 +534,7 @@ const defaultContext: LanguageContextType = {
   toggleLanguage: () => {},
   t: (key: TranslationKey, fallback?: string) => (translations.es as any)[key] || fallback || key,
   translateCategory: (c: string) => c,
+  translateCountry: (c: string) => c,
 };
 
 export function useLanguage() {

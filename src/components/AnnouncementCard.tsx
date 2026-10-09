@@ -119,7 +119,7 @@ export function AnnouncementCard({
   ];
 
   const activeSocials = socialsList.filter(s => Boolean(s.url && s.url.trim()));
-  const countryInfo = getCountryInfo(ad.extractedCountry || ad.pais, ad.extractedState || ad.estado, ad.extractedMunicipio || ad.municipio);
+  const countryInfo = getCountryInfo(ad.extractedCountry || ad.pais, ad.extractedState || ad.estado, ad.extractedMunicipio || ad.municipio, language);
   const hasImg = Boolean(ad.imagen && ad.imagen.trim() && !imgError);
 
   return (

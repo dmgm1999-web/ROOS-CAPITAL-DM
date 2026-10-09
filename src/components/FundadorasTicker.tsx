@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Building2, MapPin, Tag } from 'lucide-react';
 import { getOptimizedImageUrl } from '../utils/imageUtils';
 import { useLanguage } from '../context/LanguageContext';
+import { translateCountryName } from '../utils/countryUtils';
 
 export interface TickerAnnouncement {
   id?: string;
@@ -131,7 +132,7 @@ export function getCountryName(ad: TickerAnnouncement): string {
   return 'México';
 }
 
-export function getTickerLocation(ad: TickerAnnouncement): string {
+export function getTickerLocation(ad: TickerAnnouncement, lang: 'es' | 'en' = 'es'): string {
   // Support ciudad directly from Google Sheet 'fundadoras'
   const rawCity = cleanLocationPart(
     ad.ciudad || 
@@ -141,9 +142,10 @@ export function getTickerLocation(ad: TickerAnnouncement): string {
   const rawEstado = (ad.estado && ad.estado !== 'Todos' && ad.estado !== 'Otro' && ad.estado !== 'Internacional') 
     ? cleanLocationPart(ad.estado) 
     : '';
-  const country = getCountryName(ad);
+  const rawCountry = getCountryName(ad);
+  const country = translateCountryName(rawCountry, lang);
 
-  // If city/municipio is present, display it with country (e.g. "Monterrey, México" or "Nueva York, EE. UU.")
+  // If city/municipio is present, display it with country (e.g. "Monterrey, México" or "Nueva York, United States")
   if (rawCity) {
     if (
       country && 
@@ -168,7 +170,7 @@ export function getTickerLocation(ad: TickerAnnouncement): string {
     return rawEstado;
   }
 
-  return country || 'México';
+  return country || (lang === 'en' ? 'Mexico' : 'México');
 }
 
 function LogoImage({ src, alt }: { src: string; alt: string }) {
@@ -264,7 +266,7 @@ export default function FundadorasTicker({ ads, onSelectAd, onSelectCompany }: F
           } as React.CSSProperties}
         >
           {items.map((ad, i) => {
-            const location = getTickerLocation(ad);
+            const location = getTickerLocation(ad, language);
             const logoSrc = ad.logo && ad.logo.trim() ? ad.logo : (ad.imagen && ad.imagen.trim() ? ad.imagen : '');
             const hasPromo = Boolean(ad.promo && ad.promo.trim());
             const hasImageLink = hasAnuncioImage(ad);

@@ -71,6 +71,39 @@ async function startServer() {
     return res.json({ success: true, code: cleanCode, count: favorites.length });
   });
 
+  // Real-time active visitor tracking (counts real visitors entering and browsing the site)
+  const activeSessions = new Map<string, number>();
+  const SESSION_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes active window
+
+  app.post("/api/visitors/ping", (req, res) => {
+    const sessionId = String(req.body?.sessionId || req.ip || Math.random().toString(36).substring(2)).trim();
+    const now = Date.now();
+    activeSessions.set(sessionId, now);
+
+    // Clean up stale sessions
+    for (const [id, lastSeen] of activeSessions.entries()) {
+      if (now - lastSeen > SESSION_TIMEOUT_MS) {
+        activeSessions.delete(id);
+      }
+    }
+
+    res.json({
+      activeCount: Math.max(1, activeSessions.size)
+    });
+  });
+
+  app.get("/api/visitors/stats", (req, res) => {
+    const now = Date.now();
+    for (const [id, lastSeen] of activeSessions.entries()) {
+      if (now - lastSeen > SESSION_TIMEOUT_MS) {
+        activeSessions.delete(id);
+      }
+    }
+    res.json({
+      activeCount: Math.max(1, activeSessions.size)
+    });
+  });
+
   // Real-time in-memory cache system for Google Sheets data (TTL: 60 seconds)
   interface CacheEntry {
     data: string;
@@ -81,7 +114,10 @@ async function startServer() {
 
   // Config sheet ("elementos") containing country documents in column DIRECTORIO and country codes in CSV PAIS
   const configUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyC2jBz4JtAra4VtCNQSbCyDf28VB7Her9WpYdfuOS1eTBY9lY5ygYT9wDHUIbG4PvGlYEgDvpu6OT/pub?gid=859336638&single=true&output=csv';
-  const diamondsSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyC2jBz4JtAra4VtCNQSbCyDf28VB7Her9WpYdfuOS1eTBY9lY5ygYT9wDHUIbG4PvGlYEgDvpu6OT/pub?gid=2129723216&single=true&output=csv';
+  
+  // Sheet "anuncios alianza" (formerly "anuncios del mes" / diamonds)
+  const alianzaSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyC2jBz4JtAra4VtCNQSbCyDf28VB7Her9WpYdfuOS1eTBY9lY5ygYT9wDHUIbG4PvGlYEgDvpu6OT/pub?sheet=anuncios+alianza&output=csv';
+  const diamondsSheetUrl = alianzaSheetUrl;
   
   const directoryCacheKey = 'unified_directory_data';
   const unifiedDirectoryFilePath = path.join(process.cwd(), 'data', 'cache-sheet-primary.csv');
@@ -89,7 +125,7 @@ async function startServer() {
 
   const sheetDiskCacheMap: Record<string, string> = {
     [directoryCacheKey]: unifiedDirectoryFilePath,
-    [diamondsSheetUrl]: path.join(process.cwd(), 'data', 'cache-sheet-diamonds.csv'),
+    [alianzaSheetUrl]: path.join(process.cwd(), 'data', 'cache-sheet-alianza.csv'),
     [configUrl]: path.join(process.cwd(), 'data', 'cache-sheet-config.csv'),
   };
 
@@ -505,9 +541,9 @@ async function startServer() {
     }
   });
 
-  // Proxy route for the "Fundadoras / Diamantes en Bruto" Google Sheets CSV
-  app.get("/api/diamonds-data", async (req, res) => {
-    const csvData = await fetchWithCache(diamondsSheetUrl);
+  // Proxy route for "anuncios alianza" (formerly "anuncios del mes" / diamonds)
+  app.get(["/api/diamonds-data", "/api/alianza-data", "/api/anuncios-alianza"], async (req, res) => {
+    const csvData = await fetchWithCache(alianzaSheetUrl);
 
     res.set("Cache-Control", "no-store, no-cache, must-revalidate, private, max-age=0");
     res.set("Pragma", "no-cache");

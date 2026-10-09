@@ -16,7 +16,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useLanguage } from '../context/LanguageContext';
-import { CountryFlag, getCountryInfo } from '../utils/countryUtils';
+import { CountryFlag, getCountryInfo, translateCountryName } from '../utils/countryUtils';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -424,7 +424,7 @@ export function LocationCheckboxFilter({
                         </div>
                         <div className="flex items-center gap-1.5 min-w-0 truncate">
                           <CountryFlag countryCode={getCountryInfo(ctry).code} className="w-3.5 h-2.5 sm:w-4 sm:h-3 shrink-0" />
-                          <span className="text-xs font-semibold truncate text-[#E85B81]">{ctry}</span>
+                          <span className="text-xs font-semibold truncate text-[#E85B81]">{translateCountryName(ctry, language)}</span>
                         </div>
                       </div>
                     </label>
