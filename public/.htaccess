@@ -1,0 +1,72 @@
+# ==============================================================================
+# ROOS Capital - Hostinger Production Configuration & Security Hardening
+# ==============================================================================
+
+# 1. DISABLE DIRECTORY BROWSING (Hostinger Vulnerability Scanner fix)
+Options -Indexes
+
+# 2. ENFORCE UTF-8 ENCODING
+AddDefaultCharset UTF-8
+
+# 3. REWRITE ENGINE & HTTPS ENFORCEMENT
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Redirect HTTP to HTTPS (fixes duplicate URL & non-secure indexing warnings)
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Remove trailing slashes from URLs (except directories) to avoid duplicate content in Google
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+</IfModule>
+
+# 4. BLOCK ACCESS TO SENSITIVE, HIDDEN & CONFIGURATION FILES
+<FilesMatch "(^\.|\.(env|json|lock|config|ts|tsx|md|sql|log|sh|bak|yml|yaml)$)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Allow sitemap.xml and robots.txt specifically
+<Files "sitemap.xml">
+    Order allow,deny
+    Allow from all
+</Files>
+<Files "robots.txt">
+    Order allow,deny
+    Allow from all
+</Files>
+
+# 5. HTTP SECURITY HEADERS (Hostinger Security Scanner fix)
+<IfModule mod_headers.c>
+    # Prevent MIME-type sniffing
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Prevent clickjacking / iframe embedding on third-party sites
+    Header always set X-Frame-Options "SAMEORIGIN"
+
+    # Enable XSS filtering
+    Header always set X-XSS-Protection "1; mode=block"
+
+    # Control Referrer information
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Restrict risky browser features
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+
+    # HTTP Strict Transport Security (HSTS) - enforce HTTPS for 1 year
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" env=HTTPS
+
+    # Remove server identity headers (Information disclosure fix)
+    Header unset X-Powered-By
+    Header unset Server
+</IfModule>
+
+# 6. SPA ROUTING FOR GOOGLEBOT & USERS (Fixes 404 indexing errors on subpages)
+<IfModule mod_rewrite.c>
+    # If the requested file or directory does not exist, route to index.html
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.html [L,QSA]
+</IfModule>

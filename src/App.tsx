@@ -936,16 +936,29 @@ export const VIEW_TO_PATH: Record<AppView, string> = {
 };
 
 export const PAGE_TITLES: Record<AppView, string> = {
-  main: 'ROOS Capital | Directorio Internacional Líder del Emprendimiento Femenino',
-  somos_roos: 'Somos Roos | ROOS Capital',
-  publicate: 'Publícate | Directorio de Emprendimientos de Mujeres | ROOS Capital',
-  ugc_program: 'UGC Program | Programa de Creadoras de Contenido UGC | ROOS Capital',
-  ambassadors: 'Embajadoras | Programa de Embajadoras | ROOS Capital',
-  educacion: 'Educación y Capacitación | ROOS Capital',
-  diamonds: 'Socias Diamante | Beneficios Exclusivos | ROOS Capital',
-  faq: 'Preguntas Frecuentes (FAQ) | ROOS Capital',
-  roos_capital: 'Roos Capital | Nuestra Visión',
-  emprendedoras: 'Emprendedoras | Comunidad de Mujeres'
+  main: 'ROOS Capital | Directorio de Emprendimiento Femenino',
+  somos_roos: 'Somos ROOS Capital | Red de Emprendimiento Femenino',
+  publicate: 'Publíca tu Marca o Negocio | ROOS Capital',
+  ugc_program: 'Programa UGC | Creadoras de Contenido y Marcas - ROOS Capital',
+  ambassadors: 'Programa de Embajadoras Oficiales | ROOS Capital',
+  educacion: 'Educación y Cursos para Emprendedoras | ROOS Capital',
+  diamonds: 'Socias Diamante | Membresía Exclusiva - ROOS Capital',
+  faq: 'Preguntas Frecuentes (FAQ) | Centro de Ayuda - ROOS Capital',
+  roos_capital: 'ROOS Capital | Nuestra Visión y Ecosistema de Negocios',
+  emprendedoras: 'Emprendedoras | Directorio de Marcas de Mujeres - ROOS Capital'
+};
+
+export const PAGE_DESCRIPTIONS: Record<AppView, string> = {
+  main: 'Directorio internacional y marketplace oficial de empresas y emprendimientos liderados por mujeres. Descubre marcas, programas UGC y socias exclusivas.',
+  ugc_program: 'Conéctate con marcas y empresas líderes. Programa exclusivo para creadoras de contenido UGC sin mínimo de seguidores en ROOS Capital.',
+  somos_roos: 'Conoce la historia, misión y comunidad internacional de mujeres empresarias y líderes detrás de ROOS Capital.',
+  publicate: 'Registra tu empresa o emprendimiento liderado por mujeres en el directorio internacional de ROOS Capital e impulsa tus ventas.',
+  ambassadors: 'Sé parte de nuestra red oficial de embajadoras internacionales y promueve el liderazgo y los negocios de mujeres en el mundo.',
+  educacion: 'Cursos, mentorías y herramientas de formación empresarial para escalar marcas y negocios liderados por mujeres.',
+  diamonds: 'Accede a beneficios preferenciales, máxima visibilidad y alianzas estratégicas en el directorio oficial de ROOS Capital.',
+  emprendedoras: 'Explora y compra directamente a empresas, pymes y creadoras de múltiples sectores sin intermediarios ni comisiones.',
+  faq: 'Respuestas a dudas sobre cómo registrar tu marca, membresías, programas UGC y compras en el marketplace de ROOS Capital.',
+  roos_capital: 'Descubre nuestra visión estratégica para financiar, visibilizar y conectar a mujeres emprendedoras en Latinoamérica y el mundo.'
 };
 
 export function getViewFromLocation(): AppView {
@@ -1242,11 +1255,29 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Synchronize document title with active view
+  // Synchronize document title, meta description, and canonical link with active view
   useEffect(() => {
-    if (PAGE_TITLES[currentView]) {
-      document.title = PAGE_TITLES[currentView];
-    }
+    const title = PAGE_TITLES[currentView] || PAGE_TITLES.main;
+    const desc = PAGE_DESCRIPTIONS[currentView] || PAGE_DESCRIPTIONS.main;
+    const path = VIEW_TO_PATH[currentView] || '/';
+    const canonical = `https://rooscapital.com${path === '/' ? '/' : path}`;
+
+    document.title = title;
+
+    const descEl = document.querySelector('meta[name="description"]');
+    if (descEl) descEl.setAttribute('content', desc);
+
+    const canonicalEl = document.querySelector('link[rel="canonical"]');
+    if (canonicalEl) canonicalEl.setAttribute('href', canonical);
+
+    const ogTitleEl = document.querySelector('meta[property="og:title"]');
+    if (ogTitleEl) ogTitleEl.setAttribute('content', title);
+
+    const ogDescEl = document.querySelector('meta[property="og:description"]');
+    if (ogDescEl) ogDescEl.setAttribute('content', desc);
+
+    const ogUrlEl = document.querySelector('meta[property="og:url"]');
+    if (ogUrlEl) ogUrlEl.setAttribute('content', canonical);
   }, [currentView]);
   const [isLocDropdownOpen, setIsLocDropdownOpen] = useState(false);
   const [mobileFilterSection, setMobileFilterSection] = useState<'categorias' | 'modalidad' | 'paises' | 'estados' | 'municipios'>('categorias');

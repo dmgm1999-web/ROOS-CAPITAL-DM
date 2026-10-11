@@ -8,8 +8,40 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Support parsing JSON body
-  app.use(express.json());
+  // Security: Disable X-Powered-By header (Information Disclosure fix for Hostinger Scanner)
+  app.disable("x-powered-by");
+
+  // Security: HTTP Security Headers Middleware
+  app.use((req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "SAMEORIGIN");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    if (req.secure || req.headers["x-forwarded-proto"] === "https") {
+      res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+    }
+    next();
+  });
+
+  // Security: Block access to hidden, dotfiles, or sensitive files (.env, .git, package.json, etc.)
+  app.use((req, res, next) => {
+    const urlPath = req.path.toLowerCase();
+    if (
+      /(^\/|\/)\./.test(urlPath) ||
+      /\.(env|git|bak|backup|sql|log|sh|config|conf|ts|tsx)$/i.test(urlPath) ||
+      urlPath.includes("package.json") ||
+      urlPath.includes("package-lock.json") ||
+      urlPath.includes("tsconfig.json")
+    ) {
+      return res.status(403).send("Forbidden: Access denied");
+    }
+    next();
+  });
+
+  // Support parsing JSON body with strict payload limit to prevent DoS
+  app.use(express.json({ limit: "2mb" }));
+  app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
   // Health check endpoint
   app.get("/api/health", (req, res) => {
@@ -761,6 +793,90 @@ async function startServer() {
     res.send(svg);
   }
 
+  // SEO Route Definitions for Server-Side Meta & Canonical Tag Injection
+  const SEO_ROUTES: Record<string, { title: string; description: string; canonical: string }> = {
+    '/': {
+      title: 'ROOS Capital | Directorio de Emprendimiento Femenino',
+      description: 'Directorio internacional y marketplace oficial de empresas y emprendimientos liderados por mujeres. Descubre marcas, programas UGC y socias exclusivas.',
+      canonical: 'https://rooscapital.com/'
+    },
+    '/ugcprogram': {
+      title: 'Programa UGC | Creadoras de Contenido y Marcas - ROOS Capital',
+      description: 'Conéctate con marcas y empresas líderes. Programa exclusivo para creadoras de contenido UGC sin mínimo de seguidores en ROOS Capital.',
+      canonical: 'https://rooscapital.com/ugcprogram'
+    },
+    '/somos-roos': {
+      title: 'Somos ROOS Capital | Red de Emprendimiento Femenino',
+      description: 'Conoce la historia, misión y comunidad internacional de mujeres empresarias y líderes detrás de ROOS Capital.',
+      canonical: 'https://rooscapital.com/somos-roos'
+    },
+    '/publicate': {
+      title: 'Publíca tu Marca o Negocio | ROOS Capital',
+      description: 'Registra tu empresa o emprendimiento liderado por mujeres en el directorio internacional de ROOS Capital e impulsa tus ventas.',
+      canonical: 'https://rooscapital.com/publicate'
+    },
+    '/embajadoras': {
+      title: 'Programa de Embajadoras Oficiales | ROOS Capital',
+      description: 'Sé parte de nuestra red oficial de embajadoras internacionales y promueve el liderazgo y los negocios de mujeres en el mundo.',
+      canonical: 'https://rooscapital.com/embajadoras'
+    },
+    '/educacion': {
+      title: 'Educación y Cursos para Emprendedoras | ROOS Capital',
+      description: 'Cursos, mentorías y herramientas de formación empresarial para escalar marcas y negocios liderados por mujeres.',
+      canonical: 'https://rooscapital.com/educacion'
+    },
+    '/diamonds': {
+      title: 'Socias Diamante | Membresía Exclusiva - ROOS Capital',
+      description: 'Accede a beneficios preferenciales, máxima visibilidad y alianzas estratégicas en el directorio oficial de ROOS Capital.',
+      canonical: 'https://rooscapital.com/diamonds'
+    },
+    '/emprendedoras': {
+      title: 'Emprendedoras | Directorio de Marcas de Mujeres - ROOS Capital',
+      description: 'Explora y compra directamente a empresas, pymes y creadoras de múltiples sectores sin intermediarios ni comisiones.',
+      canonical: 'https://rooscapital.com/emprendedoras'
+    },
+    '/faq': {
+      title: 'Preguntas Frecuentes (FAQ) | Centro de Ayuda - ROOS Capital',
+      description: 'Respuestas a dudas sobre cómo registrar tu marca, membresías, programas UGC y compras en el marketplace de ROOS Capital.',
+      canonical: 'https://rooscapital.com/faq'
+    },
+    '/roos-capital': {
+      title: 'ROOS Capital | Nuestra Visión y Ecosistema de Negocios',
+      description: 'Descubre nuestra visión estratégica para financiar, visibilizar y conectar a mujeres emprendedoras en Latinoamérica y el mundo.',
+      canonical: 'https://rooscapital.com/roos-capital'
+    }
+  };
+
+  function injectSeoIntoHtml(html: string, reqPath: string): string {
+    const cleanPath = reqPath.toLowerCase().replace(/\/+$/, '') || '/';
+    const seo = SEO_ROUTES[cleanPath] || SEO_ROUTES['/'];
+
+    let result = html;
+    result = result.replace(/<title>.*?<\/title>/i, `<title>${seo.title}</title>`);
+    result = result.replace(/<meta\s+name="title"\s+content=".*?"\s*\/?>/i, `<meta name="title" content="${seo.title}" />`);
+    result = result.replace(/<meta\s+name="description"\s+content=".*?"\s*\/?>/i, `<meta name="description" content="${seo.description}" />`);
+    result = result.replace(/<link\s+rel="canonical"\s+href=".*?"\s*\/?>/i, `<link rel="canonical" href="${seo.canonical}" />`);
+    result = result.replace(/<meta\s+property="og:title"\s+content=".*?"\s*\/?>/i, `<meta property="og:title" content="${seo.title}" />`);
+    result = result.replace(/<meta\s+property="og:description"\s+content=".*?"\s*\/?>/i, `<meta property="og:description" content="${seo.description}" />`);
+    result = result.replace(/<meta\s+property="og:url"\s+content=".*?"\s*\/?>/i, `<meta property="og:url" content="${seo.canonical}" />`);
+    result = result.replace(/<meta\s+name="twitter:title"\s+content=".*?"\s*\/?>/i, `<meta name="twitter:title" content="${seo.title}" />`);
+    result = result.replace(/<meta\s+name="twitter:description"\s+content=".*?"\s*\/?>/i, `<meta name="twitter:description" content="${seo.description}" />`);
+    result = result.replace(/<meta\s+name="twitter:url"\s+content=".*?"\s*\/?>/i, `<meta name="twitter:url" content="${seo.canonical}" />`);
+
+    if (process.env.GOOGLE_SITE_VERIFICATION) {
+      result = result.replace(/<meta\s+name="google-site-verification"\s+content=".*?"\s*\/?>/i, `<meta name="google-site-verification" content="${process.env.GOOGLE_SITE_VERIFICATION}" />`);
+    }
+
+    return result;
+  }
+
+  // Google Site Verification files route (e.g. /google[hash].html)
+  app.get(/^\/google[a-z0-9]+\.html$/i, (req, res) => {
+    const filename = path.basename(req.path);
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.send(`google-site-verification: ${filename}`);
+  });
+
   // SEO: Direct robots.txt route
   app.get("/robots.txt", (req, res) => {
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
@@ -782,12 +898,16 @@ async function startServer() {
     }
     res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://rooscapital.com/</loc>
-    <lastmod>2026-08-27</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
+  <url><loc>https://rooscapital.com/</loc><lastmod>2026-10-11</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://rooscapital.com/ugcprogram</loc><lastmod>2026-10-11</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://rooscapital.com/somos-roos</loc><lastmod>2026-10-11</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://rooscapital.com/publicate</loc><lastmod>2026-10-11</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://rooscapital.com/embajadoras</loc><lastmod>2026-10-11</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://rooscapital.com/educacion</loc><lastmod>2026-10-11</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://rooscapital.com/diamonds</loc><lastmod>2026-10-11</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://rooscapital.com/emprendedoras</loc><lastmod>2026-10-11</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://rooscapital.com/roos-capital</loc><lastmod>2026-10-11</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://rooscapital.com/faq</loc><lastmod>2026-10-11</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
 </urlset>`);
   });
 
@@ -801,9 +921,15 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, { index: false }));
     app.get('*all', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      const indexPath = path.join(distPath, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        const raw = fs.readFileSync(indexPath, 'utf-8');
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        return res.send(injectSeoIntoHtml(raw, req.path));
+      }
+      res.sendFile(indexPath);
     });
   }
 
