@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Globe, MessageCircle, Phone, Instagram, Facebook, Twitter, Linkedin } from 'lucide-react';
+import { Heart, Globe, MessageCircle, Phone, Instagram, Facebook, Twitter, Linkedin, ArrowRight } from 'lucide-react';
 import { Announcement } from '../App';
 import { CountryFlag, getCountryInfo } from '../utils/countryUtils';
 import { useLanguage } from '../context/LanguageContext';
@@ -108,7 +108,20 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
     { key: 'web', icon: Globe, url: formatWebUrl(ad.web), color: 'text-brand-orange bg-brand-orange/5 border border-brand-orange/15 hover:bg-brand-orange hover:text-white hover:border-brand-orange hover:shadow-[0_4px_14px_rgba(194,115,135,0.35)]', label: 'Sitio Web' }
   ];
 
-  const activeSocials = socialsList.filter(s => Boolean(s.url && s.url.trim()));
+  const isAlianzaAd = Boolean(
+    ad.isAlianza || 
+    isDiamonds || 
+    ad.socio?.toLowerCase().includes('alianza') || 
+    ad.socio?.toLowerCase().includes('diamante')
+  );
+  const webUrl = formatWebUrl(ad.web);
+
+  // For Alianza ads, the website link is rendered as the dedicated "Comprar" button,
+  // so we omit it from the small icon square list
+  const activeSocials = socialsList
+    .filter(s => Boolean(s.url && s.url.trim()))
+    .filter(s => isAlianzaAd ? s.key !== 'web' : true);
+
   const countryInfo = getCountryInfo(ad.extractedCountry || ad.pais, ad.extractedState || ad.estado, ad.extractedMunicipio || ad.municipio, language);
   const hasImg = Boolean(ad.imagen && ad.imagen.trim() && !imgError);
 
@@ -287,41 +300,79 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
                 </p>
               </div>
             )}
+
+            {/* Dedicated "Comprar" button for Alianza ads (Diamonds view) */}
+            {isDiamonds && isAlianzaAd && webUrl && (
+              <div className="mt-3.5 pt-1">
+                <a
+                  href={webUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-fit px-6 sm:px-7 py-2.5 sm:py-3 bg-[#E85B81] hover:bg-[#DE4B73] active:scale-95 text-white rounded-full font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer group select-none"
+                  title={language === 'en' ? 'Buy' : 'Comprar'}
+                  id={`buy-btn-diamonds-${ad.id || ad.titulo}`}
+                >
+                  <span>{language === 'en' ? 'Buy' : 'Comprar'}</span>
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover:translate-x-1" />
+                </a>
+              </div>
+            )}
           </div>
 
           {/* Contact area at bottom */}
           {!isDiamonds && (
             <div className="flex flex-col mt-2 pt-1.5 border-t border-[#EFE8DF] w-full" id="card-bottom-bar">
-              <div className="flex flex-col gap-1 w-full min-w-0">
-                <span className="block text-[8px] xs:text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-neutral-500 font-sans">
-                  {t('card.contact')}
-                </span>
-                <div className="flex items-center gap-1.5 w-full pt-0.5 justify-start flex-wrap">
-                  {activeSocials.length > 0 ? (
-                    activeSocials.map((soc) => {
-                      const Icon = soc.icon;
-                      return (
-                        <a
-                          key={soc.key}
-                          href={soc.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          title={soc.label}
-                          className="w-8 sm:w-8.5 h-8 sm:h-8.5 rounded-xl bg-[#FFF9FB] hover:bg-[#FCE8EF] text-[#E85B81] border border-[#FCE8EF] hover:border-[#E85B81]/40 flex items-center justify-center transition-all duration-200 hover:-translate-y-0.5 shadow-2xs hover:shadow-xs shrink-0 cursor-pointer"
-                          id={`social-link-${soc.key}`}
-                        >
-                          <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#E85B81]" />
-                        </a>
-                      );
-                    })
-                  ) : (
-                    <span className="text-[8px] xs:text-[10px] italic text-neutral-400">
-                      {t('card.noSocials')}
-                    </span>
-                  )}
+              {/* Dedicated "Comprar" button for Alianza ads (styled identical to explore marketplace) */}
+              {isAlianzaAd && webUrl && (
+                <div className="w-full mb-2">
+                  <a
+                    href={webUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full py-2.5 sm:py-3 px-5 bg-[#E85B81] hover:bg-[#DE4B73] active:scale-95 text-white rounded-full font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer group select-none"
+                    title={language === 'en' ? 'Buy' : 'Comprar'}
+                    id={`buy-btn-${ad.id || ad.titulo}`}
+                  >
+                    <span>{language === 'en' ? 'Buy' : 'Comprar'}</span>
+                    <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover:translate-x-1" />
+                  </a>
                 </div>
-              </div>
+              )}
+
+              {(activeSocials.length > 0 || !isAlianzaAd) && (
+                <div className="flex flex-col gap-1 w-full min-w-0">
+                  <span className="block text-[8px] xs:text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-neutral-500 font-sans">
+                    {t('card.contact')}
+                  </span>
+                  <div className="flex items-center gap-1.5 w-full pt-0.5 justify-start flex-wrap">
+                    {activeSocials.length > 0 ? (
+                      activeSocials.map((soc) => {
+                        const Icon = soc.icon;
+                        return (
+                          <a
+                            key={soc.key}
+                            href={soc.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            title={soc.label}
+                            className="w-8 sm:w-8.5 h-8 sm:h-8.5 rounded-xl bg-[#FFF9FB] hover:bg-[#FCE8EF] text-[#E85B81] border border-[#FCE8EF] hover:border-[#E85B81]/40 flex items-center justify-center transition-all duration-200 hover:-translate-y-0.5 shadow-2xs hover:shadow-xs shrink-0 cursor-pointer"
+                            id={`social-link-${soc.key}`}
+                          >
+                            <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#E85B81]" />
+                          </a>
+                        );
+                      })
+                    ) : (
+                      <span className="text-[8px] xs:text-[10px] italic text-neutral-400">
+                        {t('card.noSocials')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

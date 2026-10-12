@@ -474,7 +474,7 @@ export const CountryFlag: React.FC<{ countryCode?: string; className?: string; t
  * from different countries alternate on the homepage rather than appearing
  * in homogeneous clusters from Google Sheets.
  */
-export function interleaveAnnouncementsByCountry<T extends { extractedCountry?: string; pais?: string; estado?: string; municipio?: string }>(items: T[]): T[] {
+export function interleaveAnnouncementsByCountry<T extends { extractedCountry?: string; pais?: string; estado?: string; municipio?: string; isAlianza?: boolean }>(items: T[]): T[] {
   if (!items || items.length <= 1) return items;
 
   // Group items by normalized country code
@@ -489,8 +489,34 @@ export function interleaveAnnouncementsByCountry<T extends { extractedCountry?: 
     groups.get(key)!.push(item);
   }
 
-  // If only 1 country in the list, no need to interleave
-  if (groups.size <= 1) return items;
+  // Inside each country group, interleave any Alianza announcements with regular announcements
+  // so they appear naturally "salteados" throughout the country's offerings
+  for (const [key, list] of groups.entries()) {
+    const alianza = list.filter(x => Boolean(x.isAlianza));
+    const regular = list.filter(x => !Boolean(x.isAlianza));
+
+    if (alianza.length > 0 && regular.length > 0) {
+      const mixed: T[] = [];
+      const step = Math.max(2, Math.floor(regular.length / (alianza.length + 1)));
+      let regIdx = 0;
+      let aliIdx = 0;
+
+      while (regIdx < regular.length || aliIdx < alianza.length) {
+        for (let i = 0; i < step && regIdx < regular.length; i++) {
+          mixed.push(regular[regIdx++]);
+        }
+        if (aliIdx < alianza.length) {
+          mixed.push(alianza[aliIdx++]);
+        }
+      }
+      groups.set(key, mixed);
+    }
+  }
+
+  // If only 1 country in the list, return that country's interleaved items
+  if (groups.size <= 1) {
+    return Array.from(groups.values())[0] || items;
+  }
 
   // Sort country groups by size descending
   const sortedQueues = Array.from(groups.values()).map(q => [...q]);

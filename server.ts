@@ -570,7 +570,7 @@ async function startServer() {
               const aPaisIdx = aHeaders.findIndex(h => h.includes('pais'));
               const aEstadoIdx = aHeaders.findIndex(h => h.includes('estado'));
               const aMunIdx = aHeaders.findIndex(h => h.includes('municipio') || h.includes('ciudad'));
-              const aLogoIdx = aHeaders.findIndex(h => h.includes('logo'));
+              const aLogoIdx = aHeaders.findIndex(h => h === 'anuncio' || h.includes('anuncio') || h.includes('logo') || h.includes('imagen') || h.includes('foto'));
               const aCatIdx = aHeaders.findIndex(h => h.includes('categoria') || h.includes('rubro'));
               const aIdIdx = aHeaders.findIndex(h => h === 'id' || h.includes('id'));
               const aHashIdx = aHeaders.findIndex(h => h.includes('hashtag'));
@@ -582,6 +582,9 @@ async function startServer() {
               const aTwIdx = aHeaders.findIndex(h => h === 'x' || h === 'twitter' || h.includes('twitter'));
               const aWebIdx = aHeaders.findIndex(h => h.includes('sitio') || h.includes('web') || h.includes('pagina'));
 
+              const priorityAlianzaRows: string[] = [];
+              const regularAlianzaRows: string[] = [];
+
               for (let r = aHIdx + 1; r < aLines.length; r++) {
                 const line = aLines[r];
                 if (!line || !line.trim()) continue;
@@ -590,6 +593,17 @@ async function startServer() {
                 if (!emp || emp.length < 2 || emp.startsWith('http') || emp.startsWith('+') || emp.startsWith('@')) continue;
 
                 rowCount++;
+                const imgVal = (aLogoIdx !== -1 ? cols[aLogoIdx] : '').trim();
+                const hasAnuncioImg = Boolean(
+                  imgVal && (
+                    imgVal.startsWith('http') ||
+                    imgVal.includes('drive.google.com') ||
+                    imgVal.includes('dropbox.com') ||
+                    imgVal.includes('raw.githubusercontent.com') ||
+                    imgVal.match(/\.(png|jpg|jpeg|webp|gif|svg)/i)
+                  )
+                );
+
                 const row = [
                   rowCount,
                   escapeCsvCell((aOnlineIdx !== -1 ? cols[aOnlineIdx] : '') || 'También Online'),
@@ -598,7 +612,7 @@ async function startServer() {
                   escapeCsvCell((aPaisIdx !== -1 ? cols[aPaisIdx] : '') || 'Estados Unidos'),
                   escapeCsvCell(aEstadoIdx !== -1 ? cols[aEstadoIdx] : ''),
                   escapeCsvCell(aMunIdx !== -1 ? cols[aMunIdx] : ''),
-                  escapeCsvCell(aLogoIdx !== -1 ? cols[aLogoIdx] : ''),
+                  escapeCsvCell(imgVal),
                   escapeCsvCell((aCatIdx !== -1 ? cols[aCatIdx] : '') || 'General'),
                   escapeCsvCell((aIdIdx !== -1 ? cols[aIdIdx] : '') || `ALIANZA_${rowCount}`),
                   escapeCsvCell(emp),
@@ -613,7 +627,20 @@ async function startServer() {
                   escapeCsvCell(aWebIdx !== -1 ? cols[aWebIdx] : ''),
                   'Alianza'
                 ];
-                combinedRows.push(row.join(','));
+
+                if (hasAnuncioImg) {
+                  priorityAlianzaRows.push(row.join(','));
+                } else {
+                  regularAlianzaRows.push(row.join(','));
+                }
+              }
+
+              // Append alianza rows into the unified directory
+              if (priorityAlianzaRows.length > 0) {
+                combinedRows.push(...priorityAlianzaRows);
+              }
+              if (regularAlianzaRows.length > 0) {
+                combinedRows.push(...regularAlianzaRows);
               }
             }
           }

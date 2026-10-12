@@ -61,7 +61,6 @@ import { HeroSection } from './components/HeroSection';
 import { AutocroppedLogo } from './components/AutocroppedLogo';
 import LoginModal from './components/LoginModal';
 import CursorAura from './components/CursorAura';
-import HalloweenDecorations from './components/HalloweenDecorations';
 import { getCountryInfo, interleaveAnnouncementsByCountry, CountryFlag, translateCountryName } from './utils/countryUtils';
 import { getCanonicalCategory } from './utils/categoryUtils';
 import FundadorasTicker, { hasAnuncioImage } from './components/FundadorasTicker';
@@ -213,6 +212,8 @@ export interface Announcement {
   extractedCountry?: string;
   extractedState?: string;
   extractedMunicipio?: string;
+  isAlianza?: boolean;
+  hasAnuncioImage?: boolean;
 }
 
 function TopCarousel({ ads }: { ads: Announcement[] }) {
@@ -530,13 +531,31 @@ function parseCSVAnuncios(csvText: string, isDiamonds: boolean = false): Announc
         let logo = '';
         let anuncioVal = '';
 
+        // Specific detection for column "ANUNCIO"
+        for (const key of Object.keys(normalizedRow)) {
+          if (key === 'anuncio' || key.includes('anuncio')) {
+            const val = (normalizedRow[key] || '').trim();
+            if (val && (
+              val.startsWith('http') || 
+              val.includes('drive.google.com') || 
+              val.includes('dropbox.com') || 
+              val.includes('raw.githubusercontent.com') ||
+              val.match(/\.(png|jpg|jpeg|webp|gif|svg)/i)
+            )) {
+              anuncioVal = val;
+              imagen = val;
+              break;
+            }
+          }
+        }
+
         for (const key of Object.keys(normalizedRow)) {
           const val = normalizedRow[key];
           if (!val) continue;
-          if (key.includes('anuncio') || key.includes('imagen') || key.includes('foto') || key.includes('banner') || key.includes('flyer') || key.includes('portada') || key.includes('arte')) {
+          if (!imagen && (key.includes('imagen') || key.includes('foto') || key.includes('banner') || key.includes('flyer') || key.includes('portada') || key.includes('arte'))) {
             if (val.startsWith('http') || val.includes('.png') || val.includes('.jpg') || val.includes('.jpeg') || val.includes('.webp') || val.includes('drive.google.com') || val.includes('dropbox.com')) {
               imagen = val;
-              anuncioVal = val;
+              if (!anuncioVal) anuncioVal = val;
             }
           }
           if (key.includes('logo') || key.includes('logotipo') || key.includes('icono')) {
@@ -560,6 +579,8 @@ function parseCSVAnuncios(csvText: string, isDiamonds: boolean = false): Announc
             }
           }
         }
+
+        const hasAnuncioImage = Boolean(anuncioVal && anuncioVal.trim());
 
         if (isDiamonds) {
           // For diamonds / fundadoras, do NOT copy logo into imagen if anuncio is empty,
@@ -891,7 +912,9 @@ function parseCSVAnuncios(csvText: string, isDiamonds: boolean = false): Announc
           internacional: internacionalVal,
           online: onlineVal,
           onlineLabel: onlineLabelVal,
-          proveedor: proveedorVal
+          proveedor: proveedorVal,
+          isAlianza: isDiamonds,
+          hasAnuncioImage: hasAnuncioImage
         };
       })
       .filter(ad => ad !== null) as Announcement[];
@@ -1556,11 +1579,22 @@ export default function App() {
         parsedAnnouncements = parseCSVAnuncios(sheetCsv, false);
       }
 
-      // 3. Process Alianza Sheet (formerly Diamonds)
+      // 3. Process Alianza Sheet ("anuncios alianza")
       let parsedDiamonds: Announcement[] = [];
       if (diamondsCsv && !diamondsCsv.trim().startsWith("<!DOCTYPE") && !diamondsCsv.includes("<html")) {
-        parsedDiamonds = parseCSVAnuncios(diamondsCsv, false);
+        parsedDiamonds = parseCSVAnuncios(diamondsCsv, true);
         if (parsedDiamonds.length > 0) {
+          parsedDiamonds = parsedDiamonds.map(ad => ({
+            ...ad,
+            isAlianza: true,
+            hasAnuncioImage: Boolean(ad.hasAnuncioImage || (ad.anuncio && ad.anuncio.trim()))
+          })).sort((a, b) => {
+            const aImg = Boolean(a.hasAnuncioImage || (a.anuncio && a.anuncio.trim()));
+            const bImg = Boolean(b.hasAnuncioImage || (b.anuncio && b.anuncio.trim()));
+            if (aImg && !bImg) return -1;
+            if (!aImg && bImg) return 1;
+            return 0;
+          });
           setDiamondsAnnouncements(parsedDiamonds);
           if (parsedDiamonds.length > 6) {
             try {
@@ -1570,17 +1604,22 @@ export default function App() {
         }
       }
 
-      // Merge both directory announcements and anuncios alianza (deduplicating by title & country)
+      // Merge both directory announcements and anuncios alianza (tagging isAlianza on alianza items)
       const mergedMap = new Map<string, Announcement>();
+
       parsedAnnouncements.forEach(ad => {
         const key = `${(ad.titulo || '').trim().toLowerCase()}_${(ad.pais || '').trim().toLowerCase()}`;
         if (key) mergedMap.set(key, ad);
       });
+
       parsedDiamonds.forEach(ad => {
         const key = `${(ad.titulo || '').trim().toLowerCase()}_${(ad.pais || '').trim().toLowerCase()}`;
         if (key) {
           if (!mergedMap.has(key)) {
-            mergedMap.set(key, { ...ad, socio: ad.socio || 'Alianza' });
+            mergedMap.set(key, { ...ad, socio: ad.socio || 'Alianza', isAlianza: true });
+          } else {
+            const existing = mergedMap.get(key)!;
+            mergedMap.set(key, { ...existing, ...ad, socio: ad.socio || existing.socio || 'Alianza', isAlianza: true });
           }
         }
       });
@@ -2024,7 +2063,7 @@ export default function App() {
       return true;
     });
 
-    // Interleave countries so announcements don't appear in bulk blocks as in Google Sheets
+    // Interleave all announcements by country with Alianza announcements naturally interspersed ("salteados")
     return interleaveAnnouncementsByCountry(rawFiltered);
   }, [
     parsedLocations, 
@@ -2104,16 +2143,108 @@ export default function App() {
   }, [desktopPage, totalPagesDesktop]);
 
   const displayedAnnouncements = React.useMemo(() => {
-    if (isMobile) {
-      const validMobilePage = totalPagesMobile > 0 ? Math.min(Math.max(1, mobilePage), totalPagesMobile) : 1;
-      const startIndex = (validMobilePage - 1) * 17;
-      return filteredAnnouncements.slice(startIndex, startIndex + 17);
-    } else {
-      const validDesktopPage = totalPagesDesktop > 0 ? Math.min(Math.max(1, desktopPage), totalPagesDesktop) : 1;
-      const startIndex = (validDesktopPage - 1) * 28;
-      return filteredAnnouncements.slice(startIndex, startIndex + 28);
+    // If in Diamonds view OR if filtered by a specific country, return standard pagination slice
+    if (isDiamondsView || selectedCountries.length > 0) {
+      if (isMobile) {
+        const validMobilePage = totalPagesMobile > 0 ? Math.min(Math.max(1, mobilePage), totalPagesMobile) : 1;
+        const startIndex = (validMobilePage - 1) * 17;
+        return filteredAnnouncements.slice(startIndex, startIndex + 17);
+      } else {
+        const validDesktopPage = totalPagesDesktop > 0 ? Math.min(Math.max(1, desktopPage), totalPagesDesktop) : 1;
+        const startIndex = (validDesktopPage - 1) * 28;
+        return filteredAnnouncements.slice(startIndex, startIndex + 28);
+      }
     }
-  }, [filteredAnnouncements, isMobile, mobilePage, desktopPage, totalPagesMobile, totalPagesDesktop]);
+
+    // In the general section of all countries:
+    // 1. Gather all unique announcements from "anuncios alianza" (strictly deduplicated)
+    const rawAlianza = (diamondsAnnouncements.length > 0 
+      ? diamondsAnnouncements 
+      : activeAnnouncements.filter(a => a.isAlianza || a.socio?.toLowerCase().includes('alianza'))
+    ).filter(Boolean);
+
+    const seenAlianzaKeys = new Set<string>();
+    const uniqueAlianzaAds: Announcement[] = [];
+    rawAlianza.forEach(ad => {
+      const k = `${(ad.titulo || '').trim().toLowerCase()}_${(ad.pais || '').trim().toLowerCase()}`;
+      if (k && !seenAlianzaKeys.has(k)) {
+        seenAlianzaKeys.add(k);
+        uniqueAlianzaAds.push(ad);
+      }
+    });
+
+    // 2. Filter out Alianza ads from the regular pool so that NO ad is EVER duplicated
+    const regularPool = filteredAnnouncements.filter(ad => {
+      const k = `${(ad.titulo || '').trim().toLowerCase()}_${(ad.pais || '').trim().toLowerCase()}`;
+      return !seenAlianzaKeys.has(k);
+    });
+
+    const currentPage = isMobile ? mobilePage : desktopPage;
+    const pageSize = isMobile ? 17 : 28;
+
+    // Slot 1: puesto 1 (0-indexed: 0)
+    // Slot 2: puesto 12 (0-indexed: 11)
+    // Slot 3: puesto 28 (0-indexed: 27 on desktop, 16 on mobile)
+    const slot1Target = 0;
+    const slot2Target = 11;
+    const slot3Target = isMobile ? 16 : 27;
+
+    // Check if there are enough unique Alianza ads for this page (3 per page).
+    // If not enough for subsequent pages, they only appear on page 1 ("y solo si hay suficientes, sino sólo en la pagina uno, no dupliques los anuncios").
+    const hasEnoughForThisPage = currentPage === 1 
+      ? true 
+      : uniqueAlianzaAds.length >= currentPage * 3;
+
+    // Identify which unique Alianza ad corresponds to each slot on this page (if enough exist; strictly NO DUPLICATES)
+    const adForSlot1 = hasEnoughForThisPage ? (uniqueAlianzaAds[(currentPage - 1) * 3 + 0] || null) : null;
+    const adForSlot2 = hasEnoughForThisPage ? (uniqueAlianzaAds[(currentPage - 1) * 3 + 1] || null) : null;
+    const adForSlot3 = hasEnoughForThisPage ? (uniqueAlianzaAds[(currentPage - 1) * 3 + 2] || null) : null;
+
+    // Count how many Alianza ads are placed on this specific page
+    const alianzaSlotsFilled = (adForSlot1 ? 1 : 0) + (adForSlot2 ? 1 : 0) + (adForSlot3 ? 1 : 0);
+    const regularItemsNeeded = pageSize - alianzaSlotsFilled;
+
+    // Calculate regular items offset for current page based on previous pages
+    let regularStartIndex = 0;
+    for (let p = 1; p < currentPage; p++) {
+      const pHasEnough = p === 1 ? true : uniqueAlianzaAds.length >= p * 3;
+      const pAd1 = pHasEnough && uniqueAlianzaAds[(p - 1) * 3 + 0] ? 1 : 0;
+      const pAd2 = pHasEnough && uniqueAlianzaAds[(p - 1) * 3 + 1] ? 1 : 0;
+      const pAd3 = pHasEnough && uniqueAlianzaAds[(p - 1) * 3 + 2] ? 1 : 0;
+      regularStartIndex += (pageSize - (pAd1 + pAd2 + pAd3));
+    }
+
+    const pageRegularItems = regularPool.slice(regularStartIndex, regularStartIndex + regularItemsNeeded);
+    let regPointer = 0;
+    const pageItems: Announcement[] = [];
+
+    for (let i = 0; i < pageSize; i++) {
+      if (i === slot1Target && adForSlot1) {
+        pageItems.push(adForSlot1);
+      } else if (i === slot2Target && adForSlot2) {
+        pageItems.push(adForSlot2);
+      } else if (i === slot3Target && adForSlot3) {
+        pageItems.push(adForSlot3);
+      } else {
+        if (regPointer < pageRegularItems.length) {
+          pageItems.push(pageRegularItems[regPointer++]);
+        }
+      }
+    }
+
+    return pageItems;
+  }, [
+    filteredAnnouncements, 
+    isMobile, 
+    mobilePage, 
+    desktopPage, 
+    totalPagesMobile, 
+    totalPagesDesktop, 
+    diamondsAnnouncements, 
+    activeAnnouncements,
+    isDiamondsView,
+    selectedCountries
+  ]);
 
   const [columnCount, setColumnCount] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -2142,7 +2273,16 @@ export default function App() {
     const cols: Announcement[][] = Array.from({ length: count }, () => []);
     const heights: number[] = Array(count).fill(0);
 
-    displayedAnnouncements.forEach((ad) => {
+    displayedAnnouncements.forEach((ad, adIndex) => {
+      // If this is the last item on the page and it is an Alianza ad (puesto 28),
+      // ensure it is placed in the rightmost column (bottom right corner)
+      if (ad.isAlianza && adIndex === displayedAnnouncements.length - 1 && count > 1) {
+        cols[count - 1].push(ad);
+        const hasImg = Boolean(ad.imagen && ad.imagen.trim());
+        heights[count - 1] += hasImg ? 420 : 185;
+        return;
+      }
+
       // Find the column with minimum cumulative estimated height
       let minColIndex = 0;
       for (let i = 1; i < count; i++) {
@@ -2229,8 +2369,6 @@ export default function App() {
     >
       {/* Pink Aura Light at Cursor Tip */}
       <CursorAura />
-      {/* Halloween Interactive Spider & Cobweb Decorations */}
-      <HalloweenDecorations />
       {/* Top Navigation & Hero Section matching the new aesthetic */}
       <HeroSection
         spotlightImages={activeSpotlightImages}

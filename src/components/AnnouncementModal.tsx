@@ -11,7 +11,8 @@ import {
   Linkedin, 
   Sparkles,
   Building2,
-  Tag
+  Tag,
+  ArrowRight
 } from 'lucide-react';
 import { Announcement } from '../App';
 import { getOptimizedImageUrl } from '../utils/imageUtils';
@@ -95,6 +96,12 @@ export default function AnnouncementModal({ ad, onClose }: AnnouncementModalProp
   const kakaoUrl = formatKakaoUrl(ad.kakao);
   const wechatUrl = formatWeChatUrl(ad.wechat);
   const webUrl = formatWebUrl(ad.web);
+
+  const isAlianzaAd = Boolean(
+    ad.isAlianza || 
+    ad.socio?.toLowerCase().includes('alianza') || 
+    ad.socio?.toLowerCase().includes('diamante')
+  );
 
   const socials = [
     { key: 'whatsapp', label: 'WhatsApp', icon: WhatsAppIcon, url: whatsappUrl, color: 'hover:bg-emerald-500 hover:text-white' },
@@ -299,29 +306,46 @@ export default function AnnouncementModal({ ad, onClose }: AnnouncementModalProp
           )}
         </div>
 
-        {/* Bottom Social Bar */}
-        {socials.length > 0 && (
-          <div className="px-4 py-3 sm:px-6 sm:py-3.5 bg-white border-t border-brand-wine/10 flex items-center justify-center gap-3 shrink-0">
-            <div className="flex items-center gap-2 sm:gap-3 justify-center flex-wrap">
-              <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-brand-wine/50 hidden xs:inline">
-                {t('modal.contact')}
-              </span>
-              {socials.map((s) => {
-                const Icon = s.icon;
-                return (
-                  <a
-                    key={s.key}
-                    href={s.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={s.label}
-                    className={`flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-neutral-100 text-brand-wine border border-neutral-200 transition-all duration-200 hover:scale-105 shadow-xs ${s.color}`}
-                  >
-                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </a>
-                );
-              })}
-            </div>
+        {/* Bottom Bar: Action & Socials */}
+        {(socials.length > 0 || (isAlianzaAd && webUrl)) && (
+          <div className="px-4 py-3 sm:px-6 sm:py-3.5 bg-white border-t border-brand-wine/10 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+            {isAlianzaAd && webUrl ? (
+              <a
+                href={webUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto px-7 sm:px-8 py-2.5 sm:py-3 bg-[#E85B81] hover:bg-[#DE4B73] active:scale-95 text-white rounded-full font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer group select-none"
+                id="modal-buy-btn"
+              >
+                <span>{language === 'en' ? 'Buy' : 'Comprar'}</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </a>
+            ) : (
+              <div />
+            )}
+
+            {socials.filter(s => isAlianzaAd ? s.key !== 'web' : true).length > 0 && (
+              <div className="flex items-center gap-2 sm:gap-3 justify-center flex-wrap">
+                <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-brand-wine/50 hidden xs:inline">
+                  {t('modal.contact')}
+                </span>
+                {socials.filter(s => isAlianzaAd ? s.key !== 'web' : true).map((s) => {
+                  const Icon = s.icon;
+                  return (
+                    <a
+                      key={s.key}
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={s.label}
+                      className={`flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-neutral-100 text-brand-wine border border-neutral-200 transition-all duration-200 hover:scale-105 shadow-xs ${s.color}`}
+                    >
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </a>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </motion.div>

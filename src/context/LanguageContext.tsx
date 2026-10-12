@@ -146,6 +146,7 @@ export const translations = {
     'card.onlineOnly': 'Sólo online',
     'card.international': 'Internacional',
     'card.purpose': 'Propósito del Emprendimiento',
+    'card.buy': 'Comprar',
 
     // Modal
     'modal.announcementInfo': 'Información del Anuncio',
@@ -316,6 +317,7 @@ export const translations = {
     'card.onlineOnly': 'Online only',
     'card.international': 'International',
     'card.purpose': 'Brand Purpose & Mission',
+    'card.buy': 'Buy',
 
     // Modal
     'modal.announcementInfo': 'Listing Details',
