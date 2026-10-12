@@ -238,52 +238,6 @@ export function HeroSection({
           <section className="max-w-[88rem] mx-auto px-4 sm:px-6 lg:px-10 pt-10 sm:pt-14 lg:pt-20 pb-12 sm:pb-16 lg:pb-20 overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center relative">
           
-          {/* Centered Hand-Drawn Crayon Heart between Text and Spotlight Banner (Desktop) */}
-          <div className="hidden lg:flex absolute left-[39.5%] xl:left-[40%] top-[40%] -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none select-none">
-            <motion.div
-              initial={{ scale: 0.95, rotate: -2 }}
-              animate={{ 
-                scale: [1, 1.04, 1], 
-                rotate: [-2, 2, -2],
-                y: [0, -5, 0]
-              }}
-              transition={{ repeat: Infinity, duration: 4.5, ease: "easeInOut" }}
-            >
-              <svg 
-                className="w-28 h-28 xl:w-36 xl:h-36 text-[#E85B81] drop-shadow-[0_4px_16px_rgba(232,91,129,0.22)]" 
-                viewBox="0 0 300 300" 
-                fill="none" 
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <defs>
-                  <filter id="crayon-roughness-desktop" x="-10%" y="-10%" width="120%" height="120%">
-                    <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" result="noise" />
-                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.2" xChannelSelector="R" yChannelSelector="G" />
-                  </filter>
-                </defs>
-                {/* Hand-drawn open crayon heart outline matching user's uploaded drawing */}
-                <path 
-                  d="M136 112 
-                     C 126 82, 102 42, 72 20 
-                     C 50 4, 24 16, 14 44 
-                     C 3 70, 7 104, 18 142 
-                     C 32 186, 62 230, 96 262 
-                     C 112 278, 126 292, 134 296 
-                     C 142 284, 170 252, 202 212 
-                     C 240 162, 276 110, 280 74 
-                     C 285 42, 270 18, 242 12 
-                     C 212 6, 184 20, 162 48 
-                     C 148 68, 140 92, 136 112 Z" 
-                  stroke="#E85B81" 
-                  strokeWidth="16" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                  filter="url(#crayon-roughness-desktop)"
-                />
-              </svg>
-            </motion.div>
-          </div>
-
           {/* Left Column: Editorial Typography & CTAs */}
           <div className="lg:col-span-5 flex flex-col items-start z-10">
             {/* Kicker */}
@@ -301,47 +255,57 @@ export function HeroSection({
               )}
             </span>
 
-            {/* Massive Serif Title + Centered Mobile Heart placed right beside Discover, Connect, Grow */}
-            <div className="flex items-center justify-between lg:block w-full mb-6 sm:mb-8">
-              <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-[76px] font-bold text-[#18181B] leading-[1.02] tracking-tight">
+            {/* Massive Serif Title + Centered Hand-Drawn Heart (Tilted Left & Centered to Discover, Connect, Grow) */}
+            <div className="flex items-center justify-between lg:inline-flex lg:items-center relative w-full lg:w-auto mb-6 sm:mb-8">
+              <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-[76px] font-bold text-[#18181B] leading-[1.02] tracking-tight shrink-0">
                 {t('hero.titleLine1')}<br />
                 {t('hero.titleLine2')}<br />
                 <span>{t('hero.titleLine3')}</span>
               </h1>
 
-              {/* Centered Hand-Drawn Heart on Mobile right next to the title words, centered and aligned */}
-              <div className="lg:hidden flex items-center justify-center pl-2 sm:pl-4 shrink-0 select-none pointer-events-none self-center">
-                <svg 
-                  className="w-20 h-20 sm:w-24 sm:h-24 text-[#E85B81] drop-shadow-[0_4px_12px_rgba(232,91,129,0.2)]" 
-                  viewBox="0 0 300 300" 
-                  fill="none" 
-                  xmlns="http://www.w3.org/2000/svg"
+              {/* Hand-Drawn Crayon Heart: Inclinado a la izquierda (-15°) y centrado verticalmente a las 3 palabras */}
+              <div className="flex items-center justify-center pl-3 sm:pl-4 lg:pl-6 xl:pl-8 shrink-0 select-none pointer-events-none self-center">
+                <motion.div
+                  initial={{ scale: 0.95, rotate: -15 }}
+                  animate={{ 
+                    scale: [1, 1.04, 1], 
+                    rotate: [-17, -13, -17],
+                    y: [0, -4, 0]
+                  }}
+                  transition={{ repeat: Infinity, duration: 4.5, ease: "easeInOut" }}
                 >
-                  <defs>
-                    <filter id="crayon-roughness-mobile" x="-10%" y="-10%" width="120%" height="120%">
-                      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" result="noise" />
-                      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G" />
-                    </filter>
-                  </defs>
-                  <path 
-                    d="M136 112 
-                       C 126 82, 102 42, 72 20 
-                       C 50 4, 24 16, 14 44 
-                       C 3 70, 7 104, 18 142 
-                       C 32 186, 62 230, 96 262 
-                       C 112 278, 126 292, 134 296 
-                       C 142 284, 170 252, 202 212 
-                       C 240 162, 276 110, 280 74 
-                       C 285 42, 270 18, 242 12 
-                       C 212 6, 184 20, 162 48 
-                       C 148 68, 140 92, 136 112 Z" 
-                    stroke="#E85B81" 
-                    strokeWidth="16" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                    filter="url(#crayon-roughness-mobile)"
-                  />
-                </svg>
+                  <svg 
+                    className="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 xl:w-34 xl:h-34 text-[#E85B81] drop-shadow-[0_4px_16px_rgba(232,91,129,0.22)]" 
+                    viewBox="0 0 300 300" 
+                    fill="none" 
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <defs>
+                      <filter id="crayon-roughness-heart" x="-10%" y="-10%" width="120%" height="120%">
+                        <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" result="noise" />
+                        <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.2" xChannelSelector="R" yChannelSelector="G" />
+                      </filter>
+                    </defs>
+                    <path 
+                      d="M136 112 
+                         C 126 82, 102 42, 72 20 
+                         C 50 4, 24 16, 14 44 
+                         C 3 70, 7 104, 18 142 
+                         C 32 186, 62 230, 96 262 
+                         C 112 278, 126 292, 134 296 
+                         C 142 284, 170 252, 202 212 
+                         C 240 162, 276 110, 280 74 
+                         C 285 42, 270 18, 242 12 
+                         C 212 6, 184 20, 162 48 
+                         C 148 68, 140 92, 136 112 Z" 
+                      stroke="#E85B81" 
+                      strokeWidth="16" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                      filter="url(#crayon-roughness-heart)"
+                    />
+                  </svg>
+                </motion.div>
               </div>
             </div>
 

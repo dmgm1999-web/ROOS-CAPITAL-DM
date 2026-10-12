@@ -6,7 +6,20 @@ import path from "path";
 import fs from "fs";
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+
+  // Parse port and host from CLI args or default to 3000 (AI Studio constraint)
+  let port = 3000;
+  const portArgIndex = process.argv.indexOf("--port");
+  if (portArgIndex !== -1 && process.argv[portArgIndex + 1]) {
+    port = parseInt(process.argv[portArgIndex + 1], 10) || 3000;
+  }
+  const PORT = port;
+
+  let host = "0.0.0.0";
+  const hostArgIndex = process.argv.indexOf("--host");
+  if (hostArgIndex !== -1 && process.argv[hostArgIndex + 1]) {
+    host = process.argv[hostArgIndex + 1];
+  }
 
   // Security: Disable X-Powered-By header (Information Disclosure fix for Hostinger Scanner)
   app.disable("x-powered-by");
@@ -14,10 +27,7 @@ async function startServer() {
   // Security: HTTP Security Headers Middleware
   app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
-    // Only enforce SAMEORIGIN in production so AI Studio dev preview iframe can display the app
-    if (process.env.NODE_ENV === "production") {
-      res.setHeader("X-Frame-Options", "SAMEORIGIN");
-    }
+    res.setHeader("X-Frame-Options", "SAMEORIGIN");
     res.setHeader("X-XSS-Protection", "1; mode=block");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
@@ -30,23 +40,25 @@ async function startServer() {
   // Security: Block access to hidden, dotfiles, or sensitive files (.env, .git, package.json, etc.)
   app.use((req, res, next) => {
     const urlPath = req.path.toLowerCase();
-    
-    // Always block credentials, secrets, git, and backups
+    // Allow Vite internal, client, and dev source routes
     if (
-      /(^\/|\/)\.(?!vite)/.test(urlPath) ||
-      /\.(env|git|bak|backup|sql|log|sh|conf|key|cert)$/i.test(urlPath) ||
-      urlPath.includes("package.json") ||
-      urlPath.includes("package-lock.json") ||
-      urlPath.includes("tsconfig.json")
+      urlPath.startsWith("/@") ||
+      urlPath.startsWith("/.vite") ||
+      urlPath.startsWith("/src/") ||
+      urlPath.startsWith("/node_modules/")
+    ) {
+      return next();
+    }
+
+    if (
+      /(^\/|\/)\.(env|git|svn|hg)/i.test(urlPath) ||
+      /\.(env|bak|backup|sql|log|sh)$/i.test(urlPath) ||
+      urlPath === "/package.json" ||
+      urlPath === "/package-lock.json" ||
+      urlPath === "/tsconfig.json"
     ) {
       return res.status(403).send("Forbidden: Access denied");
     }
-
-    // In production, also block direct access to raw TypeScript source files
-    if (process.env.NODE_ENV === "production" && /\.(ts|tsx)$/i.test(urlPath)) {
-      return res.status(403).send("Forbidden: Access denied");
-    }
-
     next();
   });
 
@@ -926,7 +938,10 @@ async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: process.env.DISABLE_HMR === "true" ? false : undefined,
+      },
       appType: "spa",
     });
     app.use(vite.middlewares);
@@ -944,9 +959,20 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  const server = app.listen(PORT, host, () => {
+    console.log(`Server running on http://${host}:${PORT}`);
+  });
+
+  server.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "EADDRINUSE") {
+      console.warn(`Port ${PORT} is in use.`);
+    } else {
+      console.error("Server listener error:", err);
+    }
   });
 }
 
-startServer();
+startServer().catch((err) => {
+  console.error("Failed to start server:", err);
+  process.exit(1);
+});
