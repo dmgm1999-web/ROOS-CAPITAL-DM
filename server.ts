@@ -14,7 +14,10 @@ async function startServer() {
   // Security: HTTP Security Headers Middleware
   app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "SAMEORIGIN");
+    // Only enforce SAMEORIGIN in production so AI Studio dev preview iframe can display the app
+    if (process.env.NODE_ENV === "production") {
+      res.setHeader("X-Frame-Options", "SAMEORIGIN");
+    }
     res.setHeader("X-XSS-Protection", "1; mode=block");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
@@ -27,15 +30,23 @@ async function startServer() {
   // Security: Block access to hidden, dotfiles, or sensitive files (.env, .git, package.json, etc.)
   app.use((req, res, next) => {
     const urlPath = req.path.toLowerCase();
+    
+    // Always block credentials, secrets, git, and backups
     if (
-      /(^\/|\/)\./.test(urlPath) ||
-      /\.(env|git|bak|backup|sql|log|sh|config|conf|ts|tsx)$/i.test(urlPath) ||
+      /(^\/|\/)\.(?!vite)/.test(urlPath) ||
+      /\.(env|git|bak|backup|sql|log|sh|conf|key|cert)$/i.test(urlPath) ||
       urlPath.includes("package.json") ||
       urlPath.includes("package-lock.json") ||
       urlPath.includes("tsconfig.json")
     ) {
       return res.status(403).send("Forbidden: Access denied");
     }
+
+    // In production, also block direct access to raw TypeScript source files
+    if (process.env.NODE_ENV === "production" && /\.(ts|tsx)$/i.test(urlPath)) {
+      return res.status(403).send("Forbidden: Access denied");
+    }
+
     next();
   });
 

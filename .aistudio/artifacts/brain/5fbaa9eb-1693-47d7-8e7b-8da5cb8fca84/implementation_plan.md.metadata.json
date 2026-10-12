@@ -1,0 +1,6 @@
+{
+  "summary":  "Plan de implementación para la animación de Halloween en Roos Capital:\n- Telarañas vectoriales detalladas en las esquinas y bordes laterales de la pantalla, con estética oscura/plateada acorde a la identidad visual.\n- Arañas colgantes e interactivas que descienden en hilos de seda, se balancean y huyen rápidamente hacia arriba al acercar el puntero o interactuar con ellas.\n- Arañas caminando libremente por los márgenes y la pantalla en rutas orgánicas con patitas animadas en SVG canvas/CSS.\n- Detección de proximidad al cursor: las arañas reaccionan y huyen ante la presencia del usuario sin bloquear ningún clic ni interacción.\n- Alto rendimiento en móvil y escritorio con aceleración por GPU.",
+  "updatedAt":  "2026-10-12T06:40:37.661866996Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

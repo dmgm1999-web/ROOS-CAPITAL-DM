@@ -61,6 +61,7 @@ import { HeroSection } from './components/HeroSection';
 import { AutocroppedLogo } from './components/AutocroppedLogo';
 import LoginModal from './components/LoginModal';
 import CursorAura from './components/CursorAura';
+import HalloweenDecorations from './components/HalloweenDecorations';
 import { getCountryInfo, interleaveAnnouncementsByCountry, CountryFlag, translateCountryName } from './utils/countryUtils';
 import { getCanonicalCategory } from './utils/categoryUtils';
 import FundadorasTicker, { hasAnuncioImage } from './components/FundadorasTicker';
@@ -2228,6 +2229,8 @@ export default function App() {
     >
       {/* Pink Aura Light at Cursor Tip */}
       <CursorAura />
+      {/* Halloween Interactive Spider & Cobweb Decorations */}
+      <HalloweenDecorations />
       {/* Top Navigation & Hero Section matching the new aesthetic */}
       <HeroSection
         spotlightImages={activeSpotlightImages}
