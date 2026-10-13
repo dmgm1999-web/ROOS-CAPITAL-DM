@@ -202,7 +202,7 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
           <div className="min-w-0 overflow-hidden">
             <div className="flex items-start justify-between mb-1 min-w-0 overflow-hidden">
               <div className="flex justify-between items-start gap-2.5 w-full min-w-0">
-                {ad.logo && ad.logo.trim() && (
+                {!isAlianzaAd && ad.logo && ad.logo.trim() && ad.logo !== ad.imagen && (
                   <div 
                     onClick={() => onViewFull?.(ad)}
                     className="hidden md:block w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden shadow-xs flex-shrink-0 bg-white border border-[#EFE8DF] cursor-pointer hover:opacity-90 transition-opacity"

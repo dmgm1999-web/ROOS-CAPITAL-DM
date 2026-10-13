@@ -511,7 +511,7 @@ async function startServer() {
             if (!line || !line.trim()) continue;
             const cols = parseCsvLine(line);
             const emp = cols[empIdx]?.trim();
-            if (!emp || emp.length < 2 || emp.startsWith('http') || emp.startsWith('+') || emp.startsWith('@')) continue;
+            if (!emp || emp.length < 2 || /^\d+$/.test(emp) || emp.toLowerCase() === 'nombre de la empresa' || emp.startsWith('http') || emp.startsWith('+') || emp.startsWith('@')) continue;
 
             rowCount++;
             const row = [
@@ -590,7 +590,7 @@ async function startServer() {
                 if (!line || !line.trim()) continue;
                 const cols = parseCsvLine(line);
                 const emp = cols[aEmpIdx]?.trim();
-                if (!emp || emp.length < 2 || emp.startsWith('http') || emp.startsWith('+') || emp.startsWith('@')) continue;
+                if (!emp || emp.length < 2 || /^\d+$/.test(emp) || emp.toLowerCase() === 'nombre de la empresa' || emp.startsWith('http') || emp.startsWith('+') || emp.startsWith('@')) continue;
 
                 rowCount++;
                 const imgVal = (aLogoIdx !== -1 ? cols[aLogoIdx] : '').trim();
@@ -612,7 +612,7 @@ async function startServer() {
                   escapeCsvCell((aPaisIdx !== -1 ? cols[aPaisIdx] : '') || 'Estados Unidos'),
                   escapeCsvCell(aEstadoIdx !== -1 ? cols[aEstadoIdx] : ''),
                   escapeCsvCell(aMunIdx !== -1 ? cols[aMunIdx] : ''),
-                  escapeCsvCell(imgVal),
+                  '',
                   escapeCsvCell((aCatIdx !== -1 ? cols[aCatIdx] : '') || 'General'),
                   escapeCsvCell((aIdIdx !== -1 ? cols[aIdIdx] : '') || `ALIANZA_${rowCount}`),
                   escapeCsvCell(emp),

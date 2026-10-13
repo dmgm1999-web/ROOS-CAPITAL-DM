@@ -505,13 +505,14 @@ function parseCSVAnuncios(csvText: string, isDiamonds: boolean = false): Announc
           for (let c = 0; c < row.length; c++) {
             const val = (row[c] || '').trim();
             if (val && !val.startsWith('http') && !val.startsWith('@') && !val.match(/^\+?[0-9\s-]{7,}$/) && val.length >= 2 && val.length <= 65) {
+              if (val.match(/^\d+$/) || val.match(/^[0-9\s.,-]+$/) || val.toLowerCase().includes('nombre de la empresa')) continue;
               empresa = val;
               break;
             }
           }
         }
 
-        if (!empresa || empresa.length === 0) return null;
+        if (!empresa || empresa.length === 0 || empresa.match(/^\d+$/) || empresa.toLowerCase() === 'nombre de la empresa') return null;
 
         // 2. Extract Category
         let rawCategoria = '';
@@ -573,7 +574,7 @@ function parseCSVAnuncios(csvText: string, isDiamonds: boolean = false): Announc
               const isImg = val.toLowerCase().match(/\.(png|jpg|jpeg|webp|gif|svg)/) || val.includes('drive.google.com') || val.includes('dropbox.com') || val.includes('assets') || val.includes('images');
               if (isImg && !imagen && !isDiamonds) {
                 imagen = val;
-              } else if (isImg && !logo && val !== imagen) {
+              } else if (isImg && !logo && val !== imagen && !isDiamonds) {
                 logo = val;
               }
             }
@@ -583,12 +584,10 @@ function parseCSVAnuncios(csvText: string, isDiamonds: boolean = false): Announc
         const hasAnuncioImage = Boolean(anuncioVal && anuncioVal.trim());
 
         if (isDiamonds) {
-          // For diamonds / fundadoras, do NOT copy logo into imagen if anuncio is empty,
-          // so that the modal only activates when there is an actual advertisement image link in the sheet
-          if (!logo && imagen) logo = imagen;
+          // For diamonds / Alianza, keep logo empty so that no redundant circular avatar appears next to company name
+          logo = '';
         } else {
           if (!imagen && logo) imagen = logo;
-          if (!logo && imagen) logo = imagen;
         }
 
         // 4. Extract Social Links across all columns & cell contents
@@ -876,6 +875,23 @@ function parseCSVAnuncios(csvText: string, isDiamonds: boolean = false): Announc
 
           return { online: false, onlineLabel: undefined };
         })();
+
+        const hasAnyContent = Boolean(
+          descVal || 
+          rawWhatsapp || 
+          rawInstagram || 
+          rawFacebook || 
+          rawWeb || 
+          imagen || 
+          anuncioVal || 
+          rawTiktok || 
+          rawTwitter || 
+          promoVal ||
+          hashtagsVal
+        );
+        if (!hasAnyContent) {
+          return null;
+        }
 
         return {
           id: normalizedRow.id || empresa,
@@ -2142,18 +2158,51 @@ export default function App() {
     }
   }, [desktopPage, totalPagesDesktop]);
 
-  const displayedAnnouncements = React.useMemo(() => {
+  const [columnCount, setColumnCount] = useState(() => {
+    if (typeof window !== 'undefined') {
+      if (window.innerWidth >= 1024) return 4;
+      if (window.innerWidth >= 768) return 3;
+      return 2;
+    }
+    return 2;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      const w = window.innerWidth;
+      if (w >= 1024) setColumnCount(4);
+      else if (w >= 768) setColumnCount(3);
+      else setColumnCount(2);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const { pageColumns, pageItemsList } = React.useMemo(() => {
     // If in Diamonds view OR if filtered by a specific country, return standard pagination slice
     if (isDiamondsView || selectedCountries.length > 0) {
-      if (isMobile) {
-        const validMobilePage = totalPagesMobile > 0 ? Math.min(Math.max(1, mobilePage), totalPagesMobile) : 1;
-        const startIndex = (validMobilePage - 1) * 17;
-        return filteredAnnouncements.slice(startIndex, startIndex + 17);
-      } else {
-        const validDesktopPage = totalPagesDesktop > 0 ? Math.min(Math.max(1, desktopPage), totalPagesDesktop) : 1;
-        const startIndex = (validDesktopPage - 1) * 28;
-        return filteredAnnouncements.slice(startIndex, startIndex + 28);
-      }
+      const pageSize = isMobile ? 17 : 28;
+      const validMobilePage = totalPagesMobile > 0 ? Math.min(Math.max(1, mobilePage), totalPagesMobile) : 1;
+      const validDesktopPage = totalPagesDesktop > 0 ? Math.min(Math.max(1, desktopPage), totalPagesDesktop) : 1;
+      const validPage = isMobile ? validMobilePage : validDesktopPage;
+      const startIndex = (validPage - 1) * pageSize;
+      const slice = filteredAnnouncements.slice(startIndex, startIndex + pageSize);
+
+      const count = isDiamondsView ? 1 : columnCount;
+      const cols: Announcement[][] = Array.from({ length: count }, () => []);
+      const heights: number[] = Array(count).fill(0);
+      slice.forEach((ad) => {
+        let minCol = 0;
+        for (let i = 1; i < count; i++) {
+          if (heights[i] < heights[minCol]) minCol = i;
+        }
+        cols[minCol].push(ad);
+        const hasImg = Boolean(ad.imagen && ad.imagen.trim());
+        heights[minCol] += hasImg ? 420 : 185;
+      });
+
+      return { pageColumns: cols, pageItemsList: slice };
     }
 
     // In the general section of all countries:
@@ -2181,124 +2230,135 @@ export default function App() {
 
     const currentPage = isMobile ? mobilePage : desktopPage;
     const pageSize = isMobile ? 17 : 28;
+    const adsPerPage = 5;
 
-    // Slot 1: puesto 1 (0-indexed: 0)
-    // Slot 2: puesto 12 (0-indexed: 11)
-    // Slot 3: puesto 28 (0-indexed: 27 on desktop, 16 on mobile)
-    const slot1Target = 0;
-    const slot2Target = 11;
-    const slot3Target = isMobile ? 16 : 27;
-
-    // Check if there are enough unique Alianza ads for this page (3 per page).
-    // If not enough for subsequent pages, they only appear on page 1 ("y solo si hay suficientes, sino sólo en la pagina uno, no dupliques los anuncios").
+    // Check if there are enough unique Alianza ads for this page (5 per page on desktop).
+    // If not enough for subsequent pages, they only appear on page 1 ("sino hay suficientes anuncios alianza, no los dupliques").
     const hasEnoughForThisPage = currentPage === 1 
-      ? true 
-      : uniqueAlianzaAds.length >= currentPage * 3;
+      ? uniqueAlianzaAds.length >= 1 
+      : uniqueAlianzaAds.length >= currentPage * adsPerPage;
 
-    // Identify which unique Alianza ad corresponds to each slot on this page (if enough exist; strictly NO DUPLICATES)
-    const adForSlot1 = hasEnoughForThisPage ? (uniqueAlianzaAds[(currentPage - 1) * 3 + 0] || null) : null;
-    const adForSlot2 = hasEnoughForThisPage ? (uniqueAlianzaAds[(currentPage - 1) * 3 + 1] || null) : null;
-    const adForSlot3 = hasEnoughForThisPage ? (uniqueAlianzaAds[(currentPage - 1) * 3 + 2] || null) : null;
+    // 5 slots requested by user:
+    // Slot 1: Primera columna, puesto 3 (colIdx 0, pos 2)
+    // Slot 2: Segunda columna, puesto 6 (colIdx 1, pos 5)
+    // Slot 3: Tercera columna, puesto 1 (colIdx 2, pos 0)
+    // Slot 4: Tercera columna, puesto 4 (colIdx 2, pos 3)
+    // Slot 5: Cuarta columna, puesto 6 (colIdx 3, pos 5)
+    const adCol0Pos2 = hasEnoughForThisPage ? (uniqueAlianzaAds[(currentPage - 1) * adsPerPage + 0] || null) : null;
+    const adCol1Pos5 = hasEnoughForThisPage ? (uniqueAlianzaAds[(currentPage - 1) * adsPerPage + 1] || null) : null;
+    const adCol2Pos0 = hasEnoughForThisPage ? (uniqueAlianzaAds[(currentPage - 1) * adsPerPage + 2] || null) : null;
+    const adCol2Pos3 = hasEnoughForThisPage ? (uniqueAlianzaAds[(currentPage - 1) * adsPerPage + 3] || null) : null;
+    const adCol3Pos5 = hasEnoughForThisPage ? (uniqueAlianzaAds[(currentPage - 1) * adsPerPage + 4] || null) : null;
 
-    // Count how many Alianza ads are placed on this specific page
-    const alianzaSlotsFilled = (adForSlot1 ? 1 : 0) + (adForSlot2 ? 1 : 0) + (adForSlot3 ? 1 : 0);
+    const alianzaSlotsFilled = (adCol0Pos2 ? 1 : 0) + (adCol1Pos5 ? 1 : 0) + (adCol2Pos0 ? 1 : 0) + (adCol2Pos3 ? 1 : 0) + (adCol3Pos5 ? 1 : 0);
     const regularItemsNeeded = pageSize - alianzaSlotsFilled;
 
     // Calculate regular items offset for current page based on previous pages
     let regularStartIndex = 0;
     for (let p = 1; p < currentPage; p++) {
-      const pHasEnough = p === 1 ? true : uniqueAlianzaAds.length >= p * 3;
-      const pAd1 = pHasEnough && uniqueAlianzaAds[(p - 1) * 3 + 0] ? 1 : 0;
-      const pAd2 = pHasEnough && uniqueAlianzaAds[(p - 1) * 3 + 1] ? 1 : 0;
-      const pAd3 = pHasEnough && uniqueAlianzaAds[(p - 1) * 3 + 2] ? 1 : 0;
-      regularStartIndex += (pageSize - (pAd1 + pAd2 + pAd3));
+      const pHasEnough = p === 1 ? true : uniqueAlianzaAds.length >= p * adsPerPage;
+      let pAlianzaCount = 0;
+      if (pHasEnough) {
+        for (let s = 0; s < adsPerPage; s++) {
+          if (uniqueAlianzaAds[(p - 1) * adsPerPage + s]) pAlianzaCount++;
+        }
+      }
+      regularStartIndex += (pageSize - pAlianzaCount);
     }
 
     const pageRegularItems = regularPool.slice(regularStartIndex, regularStartIndex + regularItemsNeeded);
     let regPointer = 0;
-    const pageItems: Announcement[] = [];
 
-    for (let i = 0; i < pageSize; i++) {
-      if (i === slot1Target && adForSlot1) {
-        pageItems.push(adForSlot1);
-      } else if (i === slot2Target && adForSlot2) {
-        pageItems.push(adForSlot2);
-      } else if (i === slot3Target && adForSlot3) {
-        pageItems.push(adForSlot3);
-      } else {
-        if (regPointer < pageRegularItems.length) {
-          pageItems.push(pageRegularItems[regPointer++]);
+    if (columnCount === 4) {
+      // Build 4 columns with exactly 7 items each
+      const col0: Announcement[] = [];
+      const col1: Announcement[] = [];
+      const col2: Announcement[] = [];
+      const col3: Announcement[] = [];
+
+      // Columna 1 (7 anuncios): puesto 3 (índice 2) es Alianza
+      for (let i = 0; i < 7; i++) {
+        if (i === 2 && adCol0Pos2) {
+          col0.push(adCol0Pos2);
+        } else if (regPointer < pageRegularItems.length) {
+          col0.push(pageRegularItems[regPointer++]);
         }
       }
+
+      // Columna 2 (7 anuncios): puesto 6 (índice 5) es Alianza
+      for (let i = 0; i < 7; i++) {
+        if (i === 5 && adCol1Pos5) {
+          col1.push(adCol1Pos5);
+        } else if (regPointer < pageRegularItems.length) {
+          col1.push(pageRegularItems[regPointer++]);
+        }
+      }
+
+      // Columna 3 (7 anuncios): puesto 1 (índice 0) y puesto 4 (índice 3) son Alianza
+      for (let i = 0; i < 7; i++) {
+        if (i === 0 && adCol2Pos0) {
+          col2.push(adCol2Pos0);
+        } else if (i === 3 && adCol2Pos3) {
+          col2.push(adCol2Pos3);
+        } else if (regPointer < pageRegularItems.length) {
+          col2.push(pageRegularItems[regPointer++]);
+        }
+      }
+
+      // Columna 4 (7 anuncios): puesto 6 (índice 5) es Alianza
+      for (let i = 0; i < 7; i++) {
+        if (i === 5 && adCol3Pos5) {
+          col3.push(adCol3Pos5);
+        } else if (regPointer < pageRegularItems.length) {
+          col3.push(pageRegularItems[regPointer++]);
+        }
+      }
+
+      const flatItems = [...col0, ...col1, ...col2, ...col3];
+      return { pageColumns: [col0, col1, col2, col3], pageItemsList: flatItems };
     }
 
-    return pageItems;
-  }, [
-    filteredAnnouncements, 
-    isMobile, 
-    mobilePage, 
-    desktopPage, 
-    totalPagesMobile, 
-    totalPagesDesktop, 
-    diamondsAnnouncements, 
-    activeAnnouncements,
-    isDiamondsView,
-    selectedCountries
-  ]);
-
-  const [columnCount, setColumnCount] = useState(() => {
-    if (typeof window !== 'undefined') {
-      if (window.innerWidth >= 1024) return 4;
-      if (window.innerWidth >= 768) return 3;
-      return 2;
-    }
-    return 2;
-  });
-
-  useEffect(() => {
-    const handleResize = () => {
-      const w = window.innerWidth;
-      if (w >= 1024) setColumnCount(4);
-      else if (w >= 768) setColumnCount(3);
-      else setColumnCount(2);
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const masonryColumns = React.useMemo(() => {
-    if (isDiamondsView) return [];
+    // Adapt for 2 columns (mobile) or 3 columns (tablet)
     const count = columnCount;
     const cols: Announcement[][] = Array.from({ length: count }, () => []);
-    const heights: number[] = Array(count).fill(0);
+    const itemsPerCol = Math.ceil(pageSize / count);
+    const availableAlianza = [adCol0Pos2, adCol1Pos5, adCol2Pos0, adCol2Pos3, adCol3Pos5].filter(Boolean) as Announcement[];
+    let aliPointer = 0;
 
-    displayedAnnouncements.forEach((ad, adIndex) => {
-      // If this is the last item on the page and it is an Alianza ad (puesto 28),
-      // ensure it is placed in the rightmost column (bottom right corner)
-      if (ad.isAlianza && adIndex === displayedAnnouncements.length - 1 && count > 1) {
-        cols[count - 1].push(ad);
-        const hasImg = Boolean(ad.imagen && ad.imagen.trim());
-        heights[count - 1] += hasImg ? 420 : 185;
-        return;
-      }
-
-      // Find the column with minimum cumulative estimated height
-      let minColIndex = 0;
-      for (let i = 1; i < count; i++) {
-        if (heights[i] < heights[minColIndex]) {
-          minColIndex = i;
+    for (let c = 0; c < count; c++) {
+      const colCapacity = (c === count - 1) ? (pageSize - cols.flat().length) : itemsPerCol;
+      for (let pos = 0; pos < colCapacity; pos++) {
+        const isTargetSlot = (c === 0 && pos === 2) || (c === 1 && pos === 5) || (c === 0 && pos === 0 && count === 2);
+        if (isTargetSlot && aliPointer < availableAlianza.length) {
+          cols[c].push(availableAlianza[aliPointer++]);
+        } else if (regPointer < pageRegularItems.length) {
+          cols[c].push(pageRegularItems[regPointer++]);
         }
       }
-      cols[minColIndex].push(ad);
+    }
 
-      // Estimate card height: cards with image are ~420px, without image are ~185px
-      const hasImg = Boolean(ad.imagen && ad.imagen.trim());
-      heights[minColIndex] += hasImg ? 420 : 185;
-    });
+    while (aliPointer < availableAlianza.length) {
+      cols[0].push(availableAlianza[aliPointer++]);
+    }
 
-    return cols;
-  }, [displayedAnnouncements, columnCount, isDiamondsView]);
+    const flatItems = cols.flat();
+    return { pageColumns: cols, pageItemsList: flatItems };
+  }, [
+    filteredAnnouncements,
+    isMobile,
+    mobilePage,
+    desktopPage,
+    totalPagesMobile,
+    totalPagesDesktop,
+    diamondsAnnouncements,
+    activeAnnouncements,
+    isDiamondsView,
+    selectedCountries,
+    columnCount
+  ]);
+
+  const displayedAnnouncements = pageItemsList;
+  const masonryColumns = pageColumns;
 
   const getPageNumbers = React.useMemo(() => {
     const pages = [];
