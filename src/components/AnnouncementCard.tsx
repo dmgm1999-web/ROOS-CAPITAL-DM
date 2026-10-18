@@ -3,8 +3,10 @@ import { Heart, Globe, MessageCircle, Phone, Instagram, Facebook, Twitter, Linke
 import { Announcement } from '../App';
 import { CountryFlag, getCountryInfo } from '../utils/countryUtils';
 import { useLanguage } from '../context/LanguageContext';
-import { getOptimizedImageUrl } from '../utils/imageUtils';
+import { getOptimizedImageUrl, isLikelyImageUrl } from '../utils/imageUtils';
 import { cn } from '../utils/cn';
+import roosLogoAnuncios from '../assets/images/roos_logo_anuncios.png';
+import roosCapitalLogo from '../assets/images/roos_capital_logo.png';
 import { 
   formatWhatsAppUrl, 
   formatInstagramUrl, 
@@ -87,6 +89,12 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
 }: AnnouncementCardProps) {
   const { t, translateCategory, language } = useLanguage();
   const [imgError, setImgError] = useState(false);
+  const [logoError, setLogoError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+    setLogoError(false);
+  }, [ad.imagen, ad.logo, ad.id]);
 
   const isTopSocio = ad.socio?.toLowerCase().includes('top') || ad.socio?.toLowerCase().includes('vip');
   const isTrending = ad.socio?.toLowerCase().includes('tendencia') || ad.categoria?.toLowerCase().includes('tendencia');
@@ -123,15 +131,14 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
     .filter(s => isAlianzaAd ? s.key !== 'web' : true);
 
   const countryInfo = getCountryInfo(ad.extractedCountry || ad.pais, ad.extractedState || ad.estado, ad.extractedMunicipio || ad.municipio, language);
-  const hasImg = Boolean(ad.imagen && ad.imagen.trim() && !imgError);
+  // An ad only has an image if an actual image URL was provided
+  const hasImg = Boolean(ad.imagen && ad.imagen.trim() && isLikelyImageUrl(ad.imagen));
 
   return (
     <article 
       className={cn(
         "bg-white rounded-2xl sm:rounded-3xl border border-[#EFE8DF] group relative shadow-xs w-full overflow-hidden transition-all duration-150 hover:shadow-md hover:border-[#E85B81]/40",
-        isDiamonds 
-          ? "md:flex md:flex-row md:items-stretch md:min-h-[250px]" 
-          : (!hasImg ? "min-h-[240px] sm:min-h-[252px] flex flex-col justify-between" : "w-full h-fit"),
+        !hasImg ? "min-h-[240px] sm:min-h-[252px] flex flex-col justify-between" : "w-full h-fit flex flex-col justify-start",
         isTopSocio 
           ? "ring-2 ring-[#E85B81]/30 border-[#E85B81]/40" 
           : "border-[#EFE8DF]"
@@ -157,25 +164,41 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
       {hasImg && (
         <div 
           onClick={() => onViewFull?.(ad)}
-          className={cn(
-            "relative overflow-hidden p-2 xs:p-2.5 sm:p-3 cursor-pointer group/img select-none",
-            isDiamonds ? "md:w-5/12 md:max-w-[360px] md:p-4 flex justify-center items-center flex-shrink-0" : "pb-0"
-          )}
+          className="relative overflow-hidden p-2 xs:p-2.5 sm:p-3 pb-0 cursor-pointer group/img select-none w-full"
           title={`Ver anuncio de ${ad.titulo}`}
         >
-          <div className="relative overflow-hidden rounded-xl sm:rounded-2xl w-full">
-            <img 
-              src={getOptimizedImageUrl(ad.imagen)} 
-              alt={ad.titulo}
-              className={cn(
-                "w-full object-cover transition-transform duration-500 group-hover/img:scale-105",
-                isDiamonds ? "h-48 md:h-full max-h-[220px] md:max-h-full" : "h-auto"
-              )}
-              referrerPolicy="no-referrer"
-              loading="lazy"
-              onError={() => setImgError(true)}
-            />
-            {onViewFull && (
+          <div className="relative overflow-hidden rounded-xl sm:rounded-2xl w-full aspect-[940/788] bg-white flex items-center justify-center border border-[#EFE8DF]/60 shadow-2xs">
+            {imgError ? (
+              <div 
+                className="w-full h-full rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#FAF8F5] via-[#F4EFEA] to-[#EFE8DF] border border-[#E8DFD5] flex flex-col items-center justify-center p-4 text-center select-none shadow-inner transition-colors"
+              >
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white shadow-xs border border-[#EFE8DF] p-2.5 flex items-center justify-center mb-2">
+                  <img 
+                    src={roosLogoAnuncios} 
+                    alt="ROOS Anuncios" 
+                    className="w-full h-full object-contain opacity-90" 
+                    referrerPolicy="no-referrer"
+                    loading="lazy"
+                  />
+                </div>
+                <span className="text-xs sm:text-sm font-serif font-bold text-neutral-800 line-clamp-1 max-w-[90%]">
+                  {ad.titulo}
+                </span>
+                <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-neutral-400 font-semibold mt-0.5">
+                  {translateCategory(ad.categoria)}
+                </span>
+              </div>
+            ) : (
+              <img 
+                src={getOptimizedImageUrl(ad.imagen)} 
+                alt={ad.titulo}
+                className="w-full h-full object-contain bg-white transition-transform duration-500 group-hover/img:scale-105"
+                referrerPolicy="no-referrer"
+                loading="lazy"
+                onError={() => setImgError(true)}
+              />
+            )}
+            {onViewFull && !imgError && (
               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
                 <span className="bg-white/95 text-[#18181B] text-[9px] sm:text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5 backdrop-blur-xs transform translate-y-2 group-hover/img:translate-y-0 transition-transform duration-300">
                   <span>🔍</span> {t('card.viewFull')}
@@ -187,22 +210,15 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
       )}
 
       <div className={cn(
-        "flex",
-        isDiamonds 
-          ? "flex-grow p-4 md:p-5 flex-row justify-between gap-4 md:w-7/12" 
-          : (!hasImg 
-              ? "p-2.5 xs:p-3 sm:p-4 pb-3 flex-col justify-between flex-1 w-full h-full" 
-              : "p-2.5 xs:p-3 sm:p-4 pb-3 flex-col justify-start gap-1 w-full")
+        "flex p-2.5 xs:p-3 sm:p-4 pb-3 flex-col justify-start gap-1 w-full flex-1",
+        !hasImg && "justify-between"
       )}>
-        {/* Left Side: Information */}
-        <div className={cn(
-          "flex flex-col min-w-0 overflow-hidden",
-          isDiamonds ? "flex-grow justify-between" : "justify-start gap-1"
-        )}>
+        {/* Information */}
+        <div className="flex flex-col min-w-0 overflow-hidden justify-start gap-1">
           <div className="min-w-0 overflow-hidden">
             <div className="flex items-start justify-between mb-1 min-w-0 overflow-hidden">
               <div className="flex justify-between items-start gap-2.5 w-full min-w-0">
-                {!isAlianzaAd && ad.logo && ad.logo.trim() && ad.logo !== ad.imagen && (
+                {ad.logo && ad.logo.trim() && ad.logo !== ad.imagen && !logoError && (
                   <div 
                     onClick={() => onViewFull?.(ad)}
                     className="hidden md:block w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden shadow-xs flex-shrink-0 bg-white border border-[#EFE8DF] cursor-pointer hover:opacity-90 transition-opacity"
@@ -214,6 +230,7 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
                       className="w-full h-full object-cover" 
                       referrerPolicy="no-referrer" 
                       loading="lazy"
+                      onError={() => setLogoError(true)}
                     />
                   </div>
                 )}
@@ -273,75 +290,111 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
                         {t('card.supplier')}
                       </span>
                     )}
-                  </div>
-
-                  {/* Hashtags in fuchsia color with reserved height (20px) */}
-                  <div className="min-h-[20px] flex items-center gap-1.5 flex-wrap mt-1 text-[10.5px] xs:text-[11px] sm:text-[11.5px] font-semibold text-[#E85B81] select-none font-sans leading-tight">
-                    {ad.hashtags && ad.hashtags.trim() && (
-                      ad.hashtags.split(/\s+/).filter(Boolean).map((tag, i) => (
-                        <span key={i} className="hover:underline cursor-default">
-                          {tag.startsWith('#') ? tag : `#${tag}`}
-                        </span>
-                      ))
+                    {!isAlianzaAd && ad.precio && ad.precio.trim() && (
+                      <span className="inline-flex items-center text-[8px] sm:text-[9.5px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300/80 px-2 py-0.5 rounded-full shadow-2xs">
+                        {ad.precio.trim()}
+                      </span>
                     )}
                   </div>
+
+                  {/* For Alianza ads: Description right below badges, then large fuchsia price and static promo badge beside it */}
+                  {isAlianzaAd ? (
+                    <div className="flex flex-col mt-2 gap-2">
+                      {ad.descripcion && ad.descripcion.trim() && (
+                        <p className="text-xs sm:text-[13px] font-medium text-neutral-800 leading-snug line-clamp-3 font-sans mt-0.5">
+                          {ad.descripcion.replace(/^#+/, '').trim()}
+                        </p>
+                      )}
+
+                      {(ad.precio || ad.promo) && (
+                        <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap mt-1 select-none">
+                          {ad.precio && ad.precio.trim() && (
+                            <span className="text-2xl sm:text-3xl font-black text-[#E85B81] font-sans tracking-tight">
+                              {ad.precio.trim()}
+                            </span>
+                          )}
+                          {ad.promo && ad.promo.trim() && (
+                            <div 
+                              className="px-3 py-1.5 rounded-lg bg-[#E85B81] text-white text-xs sm:text-sm font-bold tracking-wide shadow-xs select-none flex items-center gap-1.5 shrink-0"
+                              title={ad.promo.trim()}
+                            >
+                              <span className="text-xs">🏷️</span>
+                              <span>{ad.promo.trim()}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      {/* Hashtags in fuchsia color with reserved height (20px) */}
+                      <div className="min-h-[20px] flex items-center gap-1.5 flex-wrap mt-1 text-[10.5px] xs:text-[11px] sm:text-[11.5px] font-semibold text-[#E85B81] select-none font-sans leading-tight">
+                        {ad.hashtags && ad.hashtags.trim() && (
+                          ad.hashtags.split(/\s+/).filter(Boolean).map((tag, i) => (
+                            <span key={i} className="hover:underline cursor-default">
+                              {tag.startsWith('#') ? tag : `#${tag}`}
+                            </span>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Promo info banner with scrolling news ticker text and favorite button color (#E85B81) - 3x slower speed */}
+                      {ad.promo && ad.promo.trim() && (
+                        <div 
+                          className="mt-2 w-full overflow-hidden rounded-full bg-[#E85B81] text-white px-2.5 py-1 flex items-center gap-2 shadow-2xs select-none group/promo"
+                          title={ad.promo.trim()}
+                        >
+                          <div className="shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#DE4B73] text-[8.5px] font-black uppercase tracking-wider shadow-2xs z-10">
+                            <span className="text-[10px] leading-none">🏷️</span>
+                            <span>PROMO</span>
+                          </div>
+                          <div className="overflow-hidden w-full relative flex items-center">
+                            <div
+                              className="animate-ticker-marquee flex items-center gap-6 whitespace-nowrap"
+                              style={{
+                                '--ticker-duration': `${Math.max(78, ad.promo.trim().length * 3.15)}s`,
+                              } as React.CSSProperties}
+                            >
+                              {[ad.promo.trim(), ad.promo.trim(), ad.promo.trim(), ad.promo.trim()].map((promoItem, idx) => (
+                                <div key={idx} className="flex items-center gap-6 shrink-0">
+                                  <span className="text-[10px] sm:text-[11px] font-bold text-white tracking-wide leading-none">
+                                    {promoItem}
+                                  </span>
+                                  <span className="text-white/80 text-[9px] leading-none">✦</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Propósito / Descripción del Emprendimiento (for Diamantes en Bruto) */}
-            {isDiamonds && ad.descripcion && (
-              <div className="mt-4 pt-3 border-t border-[#E85B81]/15" id="diamond-card-description">
-                <span className="block text-[8px] font-black uppercase tracking-widest text-[#E85B81] mb-1 font-sans">
-                  {t('card.purpose')}
-                </span>
-                <p className="text-xs font-medium text-neutral-700 italic leading-relaxed font-lora">
-                  "{ad.descripcion}"
-                </p>
-              </div>
-            )}
-
-            {/* Dedicated "Comprar" button for Alianza ads (Diamonds view) */}
-            {isDiamonds && isAlianzaAd && webUrl && (
-              <div className="mt-3.5 pt-1">
+          {/* Contact area and action buttons at bottom */}
+          <div className="flex flex-col mt-2 pt-1.5 border-t border-[#EFE8DF] w-full" id="card-bottom-bar">
+            {/* Dedicated "Comprar" button for Alianza ads */}
+            {isAlianzaAd && webUrl && (
+              <div className="w-full mb-2">
                 <a
                   href={webUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="w-fit px-6 sm:px-7 py-2.5 sm:py-3 bg-[#E85B81] hover:bg-[#DE4B73] active:scale-95 text-white rounded-full font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer group select-none"
+                  className="w-full py-2.5 sm:py-3 px-5 bg-[#E85B81] hover:bg-[#DE4B73] active:scale-95 text-white rounded-full font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer group select-none"
                   title={language === 'en' ? 'Buy' : 'Comprar'}
-                  id={`buy-btn-diamonds-${ad.id || ad.titulo}`}
+                  id={`buy-btn-${ad.id || ad.titulo}`}
                 >
                   <span>{language === 'en' ? 'Buy' : 'Comprar'}</span>
                   <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover:translate-x-1" />
                 </a>
               </div>
             )}
-          </div>
 
-          {/* Contact area at bottom */}
-          {!isDiamonds && (
-            <div className="flex flex-col mt-2 pt-1.5 border-t border-[#EFE8DF] w-full" id="card-bottom-bar">
-              {/* Dedicated "Comprar" button for Alianza ads (styled identical to explore marketplace) */}
-              {isAlianzaAd && webUrl && (
-                <div className="w-full mb-2">
-                  <a
-                    href={webUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-full py-2.5 sm:py-3 px-5 bg-[#E85B81] hover:bg-[#DE4B73] active:scale-95 text-white rounded-full font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer group select-none"
-                    title={language === 'en' ? 'Buy' : 'Comprar'}
-                    id={`buy-btn-${ad.id || ad.titulo}`}
-                  >
-                    <span>{language === 'en' ? 'Buy' : 'Comprar'}</span>
-                    <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover:translate-x-1" />
-                  </a>
-                </div>
-              )}
-
-              {(activeSocials.length > 0 || !isAlianzaAd) && (
+            {(activeSocials.length > 0 || !isAlianzaAd) && (
                 <div className="flex flex-col gap-1 w-full min-w-0">
                   <span className="block text-[8px] xs:text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-neutral-500 font-sans">
                     {t('card.contact')}
@@ -374,37 +427,10 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
                 </div>
               )}
             </div>
-          )}
-        </div>
-
-        {/* Right column: social icons aligned vertically (Only for Diamonds view) */}
-        {isDiamonds && activeSocials.length > 0 && (
-          <div className="flex flex-col items-center justify-center gap-2.5 pl-3.5 md:pl-4 border-l border-brand-wine/10 flex-shrink-0 self-stretch" id="card-socials-vertical">
-            {activeSocials.map((soc) => {
-              const Icon = soc.icon;
-              return (
-                <a
-                  key={soc.key}
-                  href={soc.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  title={soc.label}
-                  className={cn(
-                    "flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-300 hover:scale-110 shadow-sm hover:shadow-md",
-                    soc.color
-                  )}
-                  id={`social-link-vert-${soc.key}`}
-                >
-                  <Icon className="w-4 h-4" />
-                </a>
-              );
-            })}
           </div>
-        )}
-      </div>
-    </article>
-  );
-});
+        </div>
+      </article>
+    );
+  });
 
 export default AnnouncementCard;

@@ -72,7 +72,7 @@ import { AnnouncementCard } from './components/AnnouncementCard';
 import AnnouncementModal from './components/AnnouncementModal';
 import { LocationCheckboxFilter } from './components/LocationCheckboxFilter';
 import { initGlobalButtonSounds } from './utils/sound';
-import { getOptimizedImageUrl } from './utils/imageUtils';
+import { getOptimizedImageUrl, isLikelyImageUrl, isExplicitImageUrl } from './utils/imageUtils';
 import { useLanguage } from './context/LanguageContext';
 import { LanguageToggle } from './components/LanguageToggle';
 import { 
@@ -204,6 +204,7 @@ export interface Announcement {
   ciudad?: string;
   pais?: string;
   promo?: string;
+  precio?: string;
   hashtags?: string;
   internacional?: boolean;
   online?: boolean;
@@ -371,8 +372,8 @@ function getMexicoStateAndMunicipio(direccion: string): { state: string; municip
 }
 
 const DIRECT_PRIMARY_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyC2jBz4JtAra4VtCNQSbCyDf28VB7Her9WpYdfuOS1eTBY9lY5ygYT9wDHUIbG4PvGlYEgDvpu6OT/pub?gid=0&single=true&output=csv';
-// "anuncios alianza" (formerly "anuncios del mes" / diamonds)
-const DIRECT_DIAMONDS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyC2jBz4JtAra4VtCNQSbCyDf28VB7Her9WpYdfuOS1eTBY9lY5ygYT9wDHUIbG4PvGlYEgDvpu6OT/pub?sheet=anuncios+alianza&output=csv';
+// "anuncios alianza" (formerly "anuncios del mes" / diamonds) - published under gid=0
+const DIRECT_DIAMONDS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyC2jBz4JtAra4VtCNQSbCyDf28VB7Her9WpYdfuOS1eTBY9lY5ygYT9wDHUIbG4PvGlYEgDvpu6OT/pub?gid=0&single=true&output=csv';
 const DIRECT_CONFIG_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyC2jBz4JtAra4VtCNQSbCyDf28VB7Her9WpYdfuOS1eTBY9lY5ygYT9wDHUIbG4PvGlYEgDvpu6OT/pub?gid=859336638&single=true&output=csv';
 
 async function fetchCsvWithFallback(apiEndpoint: string, directUrl: string): Promise<string> {
@@ -536,13 +537,7 @@ function parseCSVAnuncios(csvText: string, isDiamonds: boolean = false): Announc
         for (const key of Object.keys(normalizedRow)) {
           if (key === 'anuncio' || key.includes('anuncio')) {
             const val = (normalizedRow[key] || '').trim();
-            if (val && (
-              val.startsWith('http') || 
-              val.includes('drive.google.com') || 
-              val.includes('dropbox.com') || 
-              val.includes('raw.githubusercontent.com') ||
-              val.match(/\.(png|jpg|jpeg|webp|gif|svg)/i)
-            )) {
+            if (val && isLikelyImageUrl(val)) {
               anuncioVal = val;
               imagen = val;
               break;
@@ -551,30 +546,29 @@ function parseCSVAnuncios(csvText: string, isDiamonds: boolean = false): Announc
         }
 
         for (const key of Object.keys(normalizedRow)) {
-          const val = normalizedRow[key];
+          const val = (normalizedRow[key] || '').trim();
           if (!val) continue;
-          if (!imagen && (key.includes('imagen') || key.includes('foto') || key.includes('banner') || key.includes('flyer') || key.includes('portada') || key.includes('arte'))) {
-            if (val.startsWith('http') || val.includes('.png') || val.includes('.jpg') || val.includes('.jpeg') || val.includes('.webp') || val.includes('drive.google.com') || val.includes('dropbox.com')) {
+          if (!imagen && (key.includes('imagen') || key.includes('foto') || key.includes('banner') || key.includes('flyer') || key.includes('portada') || key.includes('arte') || key.includes('producto'))) {
+            if (isLikelyImageUrl(val)) {
               imagen = val;
               if (!anuncioVal) anuncioVal = val;
             }
           }
           if (key.includes('logo') || key.includes('logotipo') || key.includes('icono')) {
-            if (val.startsWith('http') || val.includes('.png') || val.includes('.jpg') || val.includes('.jpeg') || val.includes('.webp') || val.includes('drive.google.com') || val.includes('dropbox.com')) {
+            if (isLikelyImageUrl(val)) {
               logo = val;
             }
           }
         }
 
-        // Cell scan fallback for images
+        // Cell scan fallback ONLY for explicit image links (extensions or known image CDNs), never social or generic website links
         if (!imagen || !logo) {
           for (let c = 0; c < row.length; c++) {
             const val = (row[c] || '').trim();
-            if (val.startsWith('http') || val.includes('drive.google.com') || val.includes('dropbox.com') || val.includes('raw.githubusercontent.com')) {
-              const isImg = val.toLowerCase().match(/\.(png|jpg|jpeg|webp|gif|svg)/) || val.includes('drive.google.com') || val.includes('dropbox.com') || val.includes('assets') || val.includes('images');
-              if (isImg && !imagen && !isDiamonds) {
+            if (isExplicitImageUrl(val)) {
+              if (!imagen && !isDiamonds) {
                 imagen = val;
-              } else if (isImg && !logo && val !== imagen && !isDiamonds) {
+              } else if (!logo && val !== imagen && !isDiamonds) {
                 logo = val;
               }
             }
@@ -584,8 +578,10 @@ function parseCSVAnuncios(csvText: string, isDiamonds: boolean = false): Announc
         const hasAnuncioImage = Boolean(anuncioVal && anuncioVal.trim());
 
         if (isDiamonds) {
-          // For diamonds / Alianza, keep logo empty so that no redundant circular avatar appears next to company name
-          logo = '';
+          // For diamonds / Alianza: if logo is identical to imagen, keep logo empty to avoid repeating the ad banner
+          if (logo === imagen) {
+            logo = '';
+          }
         } else {
           if (!imagen && logo) imagen = logo;
         }
@@ -745,8 +741,9 @@ function parseCSVAnuncios(csvText: string, isDiamonds: boolean = false): Announc
         // Keep the true country value
         const finalPaisVal = paisVal;
 
-        // Extract hashtags from column "HASHTAGS"
+        // Extract hashtags from column "HASHTAGS" (In "anuncios alianza", hashtags was replaced by descripcion)
         const hashtagsVal = (() => {
+          if (isDiamonds) return '';
           if (normalizedRow.hashtags && String(normalizedRow.hashtags).trim()) {
             return String(normalizedRow.hashtags).trim();
           }
@@ -776,6 +773,20 @@ function parseCSVAnuncios(csvText: string, isDiamonds: boolean = false): Announc
               key.includes('descuento') ||
               key.includes('beneficio')
             ) {
+              const val = String(normalizedRow[key] || '').trim();
+              if (val) return val;
+            }
+          }
+          return '';
+        })();
+
+        // Extract precio from updated column "PRECIO"
+        const precioVal = (() => {
+          if (normalizedRow.precio && String(normalizedRow.precio).trim()) {
+            return String(normalizedRow.precio).trim();
+          }
+          for (const key of Object.keys(normalizedRow)) {
+            if (key.includes('precio') || key.includes('costo') || key.includes('price')) {
               const val = String(normalizedRow[key] || '').trim();
               if (val) return val;
             }
@@ -924,6 +935,7 @@ function parseCSVAnuncios(csvText: string, isDiamonds: boolean = false): Announc
           ciudad: ciudadVal,
           pais: finalPaisVal,
           promo: promoVal,
+          precio: precioVal,
           hashtags: hashtagsVal,
           internacional: internacionalVal,
           online: onlineVal,
@@ -1016,7 +1028,7 @@ export function getViewFromLocation(): AppView {
   if (candidate === '/publicate' || candidate === '/publicar') return 'publicate';
   if (candidate === '/embajadoras' || candidate === '/ambassadors' || candidate === '/embajadora') return 'ambassadors';
   if (candidate === '/educacion' || candidate === '/educacion-curso' || candidate === '/cursos') return 'educacion';
-  if (candidate === '/diamonds' || candidate === '/socias-diamante' || candidate === '/diamantes') return 'diamonds';
+  if (candidate === '/diamonds' || candidate === '/socias-diamante' || candidate === '/diamantes' || candidate === '/alianza' || candidate === '/anuncios-alianza' || candidate === '/alianzas' || candidate === '/anuncios') return 'diamonds';
   if (candidate === '/faq' || candidate === '/preguntas-frecuentes' || candidate === '/ayuda') return 'faq';
   if (candidate === '/roos-capital' || candidate === '/rooscapital' || candidate === '/roos_capital') return 'roos_capital';
   if (candidate === '/emprendedoras') return 'emprendedoras';
@@ -1624,23 +1636,43 @@ export default function App() {
       const mergedMap = new Map<string, Announcement>();
 
       parsedAnnouncements.forEach(ad => {
-        const key = `${(ad.titulo || '').trim().toLowerCase()}_${(ad.pais || '').trim().toLowerCase()}`;
-        if (key) mergedMap.set(key, ad);
+        const idKey = ad.id ? `id_${ad.id.trim().toLowerCase()}` : '';
+        const titleKey = `${(ad.titulo || '').trim().toLowerCase()}_${(ad.pais || '').trim().toLowerCase()}`;
+        if (idKey) mergedMap.set(idKey, ad);
+        if (titleKey) mergedMap.set(titleKey, ad);
       });
 
       parsedDiamonds.forEach(ad => {
-        const key = `${(ad.titulo || '').trim().toLowerCase()}_${(ad.pais || '').trim().toLowerCase()}`;
-        if (key) {
-          if (!mergedMap.has(key)) {
-            mergedMap.set(key, { ...ad, socio: ad.socio || 'Alianza', isAlianza: true });
-          } else {
-            const existing = mergedMap.get(key)!;
-            mergedMap.set(key, { ...existing, ...ad, socio: ad.socio || existing.socio || 'Alianza', isAlianza: true });
-          }
-        }
+        const idKey = ad.id ? `id_${ad.id.trim().toLowerCase()}` : '';
+        const titleKey = `${(ad.titulo || '').trim().toLowerCase()}_${(ad.pais || '').trim().toLowerCase()}`;
+        
+        const existing = (idKey && mergedMap.get(idKey)) || (titleKey && mergedMap.get(titleKey));
+        const mergedAd: Announcement = existing 
+          ? { 
+              ...existing, 
+              ...ad, 
+              socio: ad.socio || existing.socio || 'Alianza', 
+              isAlianza: true, 
+              precio: ad.precio || existing.precio, 
+              descripcion: ad.descripcion || existing.descripcion, 
+              promo: ad.promo || existing.promo,
+              id: ad.id || existing.id
+            }
+          : { ...ad, socio: ad.socio || 'Alianza', isAlianza: true };
+
+        if (idKey) mergedMap.set(idKey, mergedAd);
+        if (titleKey) mergedMap.set(titleKey, mergedAd);
       });
 
-      const combinedAnnouncements = Array.from(mergedMap.values());
+      const seenCards = new Set<string>();
+      const combinedAnnouncements: Announcement[] = [];
+      for (const ad of mergedMap.values()) {
+        const dedupeKey = `${(ad.id || ad.titulo || '').trim().toLowerCase()}_${(ad.titulo || '').trim().toLowerCase()}`;
+        if (!seenCards.has(dedupeKey)) {
+          seenCards.add(dedupeKey);
+          combinedAnnouncements.push(ad);
+        }
+      }
       if (combinedAnnouncements.length > 0) {
         setAnnouncements(combinedAnnouncements);
         setError(null);
@@ -1686,8 +1718,8 @@ export default function App() {
   const activeAnnouncements = isDiamondsView 
     ? (diamondsAnnouncements.length > 0 ? diamondsAnnouncements : announcements.filter(a => a.socio?.toLowerCase().includes('alianza') || a.socio?.toLowerCase().includes('diamante')))
     : announcements;
-  const activeSearchTerm = searchTerm;
-  const activeSelectedLocation = selectedLocation;
+  const activeSearchTerm = isDiamondsView ? diamondsSearchTerm : searchTerm;
+  const activeSelectedLocation = isDiamondsView ? diamondsSelectedLocation : selectedLocation;
 
   const setActiveSearchTerm = (val: string) => {
     if (isDiamondsView) {
@@ -1988,13 +2020,22 @@ export default function App() {
         'roos capital mx'
       ].includes(searchLower);
 
+      const normSearch = searchLower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       const matchesSearch = 
         !activeSearchTerm ||
         isBrandSearch ||
+        (a.id && a.id.toLowerCase().includes(searchLower)) ||
+        (a.id && a.id.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(normSearch)) ||
+        (a.id && normSearch.includes(a.id.toLowerCase().trim())) ||
+        (a.id && a.id.toLowerCase().replace(/^0+/, '').includes(searchLower.replace(/^0+/, ''))) ||
         a.titulo.toLowerCase().includes(searchLower) || 
+        a.titulo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(normSearch) ||
         a.descripcion.toLowerCase().includes(searchLower) ||
-        (a.keywords && a.keywords.toLowerCase().includes(searchLower)) ||
-        (a.hashtags && a.hashtags.toLowerCase().includes(searchLower)) ||
+        a.descripcion.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(normSearch) ||
+        (a.keywords && a.keywords.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(normSearch)) ||
+        (a.hashtags && a.hashtags.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(normSearch)) ||
+        (a.promo && a.promo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(normSearch)) ||
+        (a.precio && a.precio.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(normSearch)) ||
         a.categoria.toLowerCase().includes(searchLower) ||
         (a.direccion && a.direccion.toLowerCase().includes(searchLower)) ||
         (Boolean(a.proveedor) && (searchLower.includes('proveedor') || 'proveedor'.includes(searchLower) || 'proveedores'.includes(searchLower))) ||
@@ -2180,8 +2221,10 @@ export default function App() {
   }, []);
 
   const { pageColumns, pageItemsList } = React.useMemo(() => {
-    // If in Diamonds view OR if filtered by a specific country, return standard pagination slice
-    if (isDiamondsView || selectedCountries.length > 0) {
+    const isSearchOrFilterActive = activeSearchTerm.trim() !== '' || activeLocationFilterCount > 0 || filterFavoritesOnly;
+
+    // If in Diamonds view OR if any search/filter is active OR if filtered by country, return standard pagination slice directly
+    if (isDiamondsView || selectedCountries.length > 0 || isSearchOrFilterActive) {
       const pageSize = isMobile ? 17 : 28;
       const validMobilePage = totalPagesMobile > 0 ? Math.min(Math.max(1, mobilePage), totalPagesMobile) : 1;
       const validDesktopPage = totalPagesDesktop > 0 ? Math.min(Math.max(1, desktopPage), totalPagesDesktop) : 1;
@@ -2189,7 +2232,7 @@ export default function App() {
       const startIndex = (validPage - 1) * pageSize;
       const slice = filteredAnnouncements.slice(startIndex, startIndex + pageSize);
 
-      const count = isDiamondsView ? 1 : columnCount;
+      const count = columnCount;
       const cols: Announcement[][] = Array.from({ length: count }, () => []);
       const heights: number[] = Array(count).fill(0);
       slice.forEach((ad) => {
@@ -2222,12 +2265,6 @@ export default function App() {
       }
     });
 
-    // 2. Filter out Alianza ads from the regular pool so that NO ad is EVER duplicated
-    const regularPool = filteredAnnouncements.filter(ad => {
-      const k = `${(ad.titulo || '').trim().toLowerCase()}_${(ad.pais || '').trim().toLowerCase()}`;
-      return !seenAlianzaKeys.has(k);
-    });
-
     const currentPage = isMobile ? mobilePage : desktopPage;
     const pageSize = isMobile ? 17 : 28;
     const adsPerPage = 5;
@@ -2249,6 +2286,17 @@ export default function App() {
     const adCol2Pos0 = hasEnoughForThisPage ? (uniqueAlianzaAds[(currentPage - 1) * adsPerPage + 2] || null) : null;
     const adCol2Pos3 = hasEnoughForThisPage ? (uniqueAlianzaAds[(currentPage - 1) * adsPerPage + 3] || null) : null;
     const adCol3Pos5 = hasEnoughForThisPage ? (uniqueAlianzaAds[(currentPage - 1) * adsPerPage + 4] || null) : null;
+
+    // 2. Only filter out the Alianza ads that are placed in the featured slots on this specific page
+    const currentPageFeaturedKeys = new Set(
+      [adCol0Pos2, adCol1Pos5, adCol2Pos0, adCol2Pos3, adCol3Pos5]
+        .filter(Boolean)
+        .map(a => `${(a!.titulo || '').trim().toLowerCase()}_${(a!.pais || '').trim().toLowerCase()}`)
+    );
+    const regularPool = filteredAnnouncements.filter(ad => {
+      const k = `${(ad.titulo || '').trim().toLowerCase()}_${(ad.pais || '').trim().toLowerCase()}`;
+      return !currentPageFeaturedKeys.has(k);
+    });
 
     const alianzaSlotsFilled = (adCol0Pos2 ? 1 : 0) + (adCol1Pos5 ? 1 : 0) + (adCol2Pos0 ? 1 : 0) + (adCol2Pos3 ? 1 : 0) + (adCol3Pos5 ? 1 : 0);
     const regularItemsNeeded = pageSize - alianzaSlotsFilled;
@@ -2809,10 +2857,7 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Noticias Linear Banner Line below search bar (from ELEMENTOS -> NOTICIAS) */}
-                <div className="w-full mt-3 mb-1" id="desktop-noticias-ticker-container">
-                  <NoticiasTicker noticias={noticiasList} />
-                </div>
+                {/* Noticias Linear Banner Line (desactivada temporalmente) */}
               </div>
             </div>
 
@@ -3058,10 +3103,7 @@ export default function App() {
                 </div>
               )}
 
-              {/* Noticias Linear Banner Line on Mobile below search bar */}
-              <div className="w-full mt-2 mb-0" id="mobile-noticias-ticker-container">
-                <NoticiasTicker noticias={noticiasList} />
-              </div>
+              {/* Noticias Linear Banner Line (desactivada temporalmente) */}
             </div>
 
           </header>
@@ -3110,21 +3152,6 @@ export default function App() {
                 <RefreshCw className="w-16 h-16 text-brand-orange animate-spin" />
                 <div className="absolute inset-0 w-16 h-16 border-4 border-brand-orange/20 rounded-full animate-ping" />
               </div>
-            </div>
-          ) : isDiamondsView ? (
-            <div className="grid grid-cols-1 gap-8 max-w-4xl mx-auto w-full">
-              <AnimatePresence mode="popLayout">
-                {displayedAnnouncements.map((ad, idx) => (
-                  <AnnouncementCard 
-                    key={`${ad.id || ad.titulo}-${idx}`} 
-                    ad={ad} 
-                    isDiamonds={true} 
-                    isFavorite={isFavorite(ad)}
-                    onToggleFavorite={() => handleToggleFavorite(ad)}
-                    onViewFull={(selected) => setSelectedAdForModal(selected)}
-                  />
-                ))}
-              </AnimatePresence>
             </div>
           ) : (
             <div 

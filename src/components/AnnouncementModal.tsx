@@ -43,6 +43,7 @@ import {
   KakaoIcon, 
   WeChatIcon 
 } from './SocialIcons';
+import roosLogoAnuncios from '../assets/images/roos_logo_anuncios.png';
 
 interface AnnouncementModalProps {
   ad: Announcement | null;
@@ -52,6 +53,12 @@ interface AnnouncementModalProps {
 export default function AnnouncementModal({ ad, onClose }: AnnouncementModalProps) {
   const { t, translateCategory, language } = useLanguage();
   const [imgError, setImgError] = useState(false);
+  const [logoError, setLogoError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+    setLogoError(false);
+  }, [ad]);
 
   // Close on Escape key
   useEffect(() => {
@@ -174,13 +181,15 @@ export default function AnnouncementModal({ ad, onClose }: AnnouncementModalProp
         {/* Top Header Bar */}
         <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-brand-wine/10 bg-white/95 backdrop-blur-sm z-10 shrink-0">
           <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 pr-2">
-            {ad.logo && (
+            {ad.logo && !logoError && (
               <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full overflow-hidden border border-brand-orange/30 shadow-xs bg-white flex-shrink-0">
                 <img 
                   src={getOptimizedImageUrl(ad.logo)} 
                   alt={ad.titulo} 
                   className="w-full h-full object-cover" 
                   referrerPolicy="no-referrer"
+                  loading="lazy"
+                  onError={() => setLogoError(true)}
                 />
               </div>
             )}
@@ -242,13 +251,67 @@ export default function AnnouncementModal({ ad, onClose }: AnnouncementModalProp
                   </>
                 )}
               </div>
-              {ad.promo && ad.promo.trim() && (
-                <div className="mt-1.5">
-                  <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-bold text-[#943D4E] bg-brand-orange/20 border border-[#E2A7B5]/60 px-2.5 py-0.5 rounded-full shadow-2xs">
-                    <Tag className="w-3 h-3 text-[#943D4E] shrink-0" />
-                    <span>{ad.promo.trim()}</span>
-                  </span>
+              {isAlianzaAd ? (
+                <div className="flex flex-col mt-2 gap-1.5">
+                  {ad.descripcion && ad.descripcion.trim() && (
+                    <p className="text-xs sm:text-sm font-medium text-neutral-800 leading-snug line-clamp-3 font-sans">
+                      {ad.descripcion.replace(/^#+/, '').trim()}
+                    </p>
+                  )}
+                  {(ad.precio || ad.promo) && (
+                    <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap mt-0.5 select-none">
+                      {ad.precio && ad.precio.trim() && (
+                        <span className="text-2xl sm:text-3xl font-black text-[#E85B81] font-sans tracking-tight">
+                          {ad.precio.trim()}
+                        </span>
+                      )}
+                      {ad.promo && ad.promo.trim() && (
+                        <div 
+                          className="px-3 py-1.5 rounded-lg bg-[#E85B81] text-white text-xs sm:text-sm font-bold tracking-wide shadow-xs select-none flex items-center gap-1.5 shrink-0"
+                          title={ad.promo.trim()}
+                        >
+                          <span className="text-xs">🏷️</span>
+                          <span>{ad.promo.trim()}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
+              ) : (
+                <>
+                  {ad.precio && ad.precio.trim() && (
+                    <div className="mt-1">
+                      <span className="inline-flex items-center text-[10px] sm:text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-300/80 px-2.5 py-0.5 rounded-full shadow-2xs">
+                        {ad.precio.trim()}
+                      </span>
+                    </div>
+                  )}
+                  {ad.promo && ad.promo.trim() && (
+                    <div className="mt-2 w-full max-w-sm overflow-hidden rounded-full bg-[#E85B81] text-white px-2.5 py-1 flex items-center gap-2 shadow-2xs select-none">
+                      <div className="shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#DE4B73] text-[9px] font-black uppercase tracking-wider shadow-2xs z-10">
+                        <span className="text-[10px] leading-none">🏷️</span>
+                        <span>PROMO</span>
+                      </div>
+                      <div className="overflow-hidden w-full relative flex items-center">
+                        <div
+                          className="animate-ticker-marquee flex items-center gap-6 whitespace-nowrap"
+                          style={{
+                            '--ticker-duration': `${Math.max(78, ad.promo.trim().length * 3.15)}s`,
+                          } as React.CSSProperties}
+                        >
+                          {[ad.promo.trim(), ad.promo.trim(), ad.promo.trim(), ad.promo.trim()].map((promoItem, idx) => (
+                            <div key={idx} className="flex items-center gap-6 shrink-0">
+                              <span className="text-[11px] sm:text-xs font-bold text-white tracking-wide leading-none">
+                                {promoItem}
+                              </span>
+                              <span className="text-white/80 text-[10px] leading-none">✦</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -270,18 +333,27 @@ export default function AnnouncementModal({ ad, onClose }: AnnouncementModalProp
         <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-neutral-900/5 flex flex-col items-center justify-center min-h-[220px]">
           {optimizedImgUrl && !imgError ? (
             <div className="relative w-full flex items-center justify-center">
-              <img
-                src={optimizedImgUrl}
-                alt={ad.titulo}
-                className="max-h-[60vh] sm:max-h-[68vh] md:max-h-[72vh] w-auto max-w-full object-contain rounded-2xl shadow-xl transition-all duration-300 select-none"
-                referrerPolicy="no-referrer"
-                onError={() => setImgError(true)}
-              />
+              <div className="w-full max-w-[940px] aspect-[940/788] max-h-[68vh] bg-white rounded-2xl flex items-center justify-center overflow-hidden shadow-xl border border-neutral-200">
+                <img
+                  src={optimizedImgUrl}
+                  alt={ad.titulo}
+                  className="w-full h-full object-contain bg-white select-none"
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
+                  onError={() => setImgError(true)}
+                />
+              </div>
             </div>
           ) : (
             <div className="p-8 text-center flex flex-col items-center justify-center max-w-md">
-              <div className="w-16 h-16 rounded-2xl bg-brand-orange/10 border border-brand-orange/30 flex items-center justify-center text-brand-orange mb-3">
-                <Building2 className="w-8 h-8" />
+              <div className="w-16 h-16 rounded-2xl bg-white shadow-xs border border-brand-wine/10 p-2.5 flex items-center justify-center mb-3">
+                <img 
+                  src={roosLogoAnuncios} 
+                  alt="ROOS" 
+                  className="w-full h-full object-contain opacity-90" 
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
+                />
               </div>
               <h3 className="text-xl font-bold text-brand-wine mb-1">{ad.titulo}</h3>
               <p className="text-xs text-brand-wine/60 uppercase font-semibold tracking-wider mb-4">{translateCategory(ad.categoria)}</p>

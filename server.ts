@@ -170,8 +170,8 @@ async function startServer() {
   // Config sheet ("elementos") containing country documents in column DIRECTORIO and country codes in CSV PAIS
   const configUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyC2jBz4JtAra4VtCNQSbCyDf28VB7Her9WpYdfuOS1eTBY9lY5ygYT9wDHUIbG4PvGlYEgDvpu6OT/pub?gid=859336638&single=true&output=csv';
   
-  // Sheet "anuncios alianza" (formerly "anuncios del mes" / diamonds)
-  const alianzaSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyC2jBz4JtAra4VtCNQSbCyDf28VB7Her9WpYdfuOS1eTBY9lY5ygYT9wDHUIbG4PvGlYEgDvpu6OT/pub?sheet=anuncios+alianza&output=csv';
+  // Sheet "anuncios alianza" (formerly "anuncios del mes" / diamonds) - published under gid=0
+  const alianzaSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyC2jBz4JtAra4VtCNQSbCyDf28VB7Her9WpYdfuOS1eTBY9lY5ygYT9wDHUIbG4PvGlYEgDvpu6OT/pub?gid=0&single=true&output=csv';
   const diamondsSheetUrl = alianzaSheetUrl;
   
   const directoryCacheKey = 'unified_directory_data';
@@ -567,14 +567,16 @@ async function startServer() {
               const aOnlineIdx = aHeaders.findIndex(h => h.includes('online'));
               const aIntIdx = aHeaders.findIndex(h => h.includes('internacional'));
               const aProvIdx = aHeaders.findIndex(h => h.includes('proveedor'));
-              const aPaisIdx = aHeaders.findIndex(h => h.includes('pais'));
+              const aPaisIdx = aHeaders.findIndex(h => h.includes('pais') || h.includes('país'));
               const aEstadoIdx = aHeaders.findIndex(h => h.includes('estado'));
               const aMunIdx = aHeaders.findIndex(h => h.includes('municipio') || h.includes('ciudad'));
-              const aLogoIdx = aHeaders.findIndex(h => h === 'anuncio' || h.includes('anuncio') || h.includes('logo') || h.includes('imagen') || h.includes('foto'));
+              const aLogoIdx = aHeaders.findIndex(h => h === 'logo' || (h.includes('logo') && !h.includes('anuncio')));
+              const aAnuncioIdx = aHeaders.findIndex(h => h === 'anuncio' || h.includes('anuncio') || h.includes('imagen') || h.includes('foto') || h.includes('banner'));
               const aCatIdx = aHeaders.findIndex(h => h.includes('categoria') || h.includes('rubro'));
               const aIdIdx = aHeaders.findIndex(h => h === 'id' || h.includes('id'));
-              const aHashIdx = aHeaders.findIndex(h => h.includes('hashtag'));
+              const aHashIdx = aHeaders.findIndex(h => h.includes('hashtag') || h.includes('descripcion') || h.includes('descripción'));
               const aPromoIdx = aHeaders.findIndex(h => h.includes('promo'));
+              const aPrecioIdx = aHeaders.findIndex(h => h.includes('precio') || h.includes('costo') || h.includes('price'));
               const aWspIdx = aHeaders.findIndex(h => (h.includes('whatsapp') || h.includes('telefono')) && !h.includes('wechat'));
               const aFbIdx = aHeaders.findIndex(h => h.includes('facebook') || h === 'fb');
               const aIgIdx = aHeaders.findIndex(h => h.includes('instagram') || h === 'ig');
@@ -593,15 +595,16 @@ async function startServer() {
                 if (!emp || emp.length < 2 || /^\d+$/.test(emp) || emp.toLowerCase() === 'nombre de la empresa' || emp.startsWith('http') || emp.startsWith('+') || emp.startsWith('@')) continue;
 
                 rowCount++;
-                const imgVal = (aLogoIdx !== -1 ? cols[aLogoIdx] : '').trim();
+                const anuncioVal = (aAnuncioIdx !== -1 ? cols[aAnuncioIdx] : '').trim();
+                const logoVal = (aLogoIdx !== -1 ? cols[aLogoIdx] : '').trim();
                 const hasAnuncioImg = Boolean(
-                  imgVal && (
-                    imgVal.startsWith('http') ||
-                    imgVal.includes('drive.google.com') ||
-                    imgVal.includes('dropbox.com') ||
-                    imgVal.includes('raw.githubusercontent.com') ||
-                    imgVal.match(/\.(png|jpg|jpeg|webp|gif|svg)/i)
-                  )
+                  anuncioVal && (
+                    anuncioVal.startsWith('http') ||
+                    anuncioVal.startsWith('//') ||
+                    anuncioVal.includes('drive.google.com') ||
+                    anuncioVal.includes('dropbox.com') ||
+                    anuncioVal.includes('raw.githubusercontent.com')
+                  ) && !anuncioVal.includes('wa.me') && !anuncioVal.includes('whatsapp') && !anuncioVal.includes('facebook')
                 );
 
                 const row = [
@@ -609,10 +612,10 @@ async function startServer() {
                   escapeCsvCell((aOnlineIdx !== -1 ? cols[aOnlineIdx] : '') || 'También Online'),
                   escapeCsvCell((aIntIdx !== -1 ? cols[aIntIdx] : '') || 'SI'),
                   escapeCsvCell((aProvIdx !== -1 ? cols[aProvIdx] : '') || 'SI'),
-                  escapeCsvCell((aPaisIdx !== -1 ? cols[aPaisIdx] : '') || 'Estados Unidos'),
+                  escapeCsvCell((aPaisIdx !== -1 ? cols[aPaisIdx] : '') || 'México'),
                   escapeCsvCell(aEstadoIdx !== -1 ? cols[aEstadoIdx] : ''),
                   escapeCsvCell(aMunIdx !== -1 ? cols[aMunIdx] : ''),
-                  '',
+                  escapeCsvCell(anuncioVal || logoVal || ''),
                   escapeCsvCell((aCatIdx !== -1 ? cols[aCatIdx] : '') || 'General'),
                   escapeCsvCell((aIdIdx !== -1 ? cols[aIdIdx] : '') || `ALIANZA_${rowCount}`),
                   escapeCsvCell(emp),
