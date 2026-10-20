@@ -4,6 +4,8 @@ import { Announcement } from '../App';
 import { CountryFlag, getCountryInfo } from '../utils/countryUtils';
 import { useLanguage } from '../context/LanguageContext';
 import { getOptimizedImageUrl, isLikelyImageUrl } from '../utils/imageUtils';
+import { extractPromoPercentage } from '../utils/promoUtils';
+import { FormattedPrice } from '../utils/priceUtils';
 import { cn } from '../utils/cn';
 import roosLogoAnuncios from '../assets/images/roos_logo_anuncios.png';
 import roosCapitalLogo from '../assets/images/roos_capital_logo.png';
@@ -137,8 +139,7 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
   return (
     <article 
       className={cn(
-        "bg-white rounded-2xl sm:rounded-3xl border border-[#EFE8DF] group relative shadow-xs w-full overflow-hidden transition-all duration-150 hover:shadow-md hover:border-[#E85B81]/40",
-        !hasImg ? "min-h-[240px] sm:min-h-[252px] flex flex-col justify-between" : "w-full h-fit flex flex-col justify-start",
+        "bg-white rounded-2xl sm:rounded-3xl border border-[#EFE8DF] group relative shadow-xs w-full h-full flex flex-col justify-between overflow-hidden transition-all duration-150 hover:shadow-md hover:border-[#E85B81]/40",
         isTopSocio 
           ? "ring-2 ring-[#E85B81]/30 border-[#E85B81]/40" 
           : "border-[#EFE8DF]"
@@ -237,10 +238,10 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
                 
                 {/* Left side: Company name and category */}
                 <div className="flex flex-col min-w-0 flex-1 overflow-hidden pr-0.5">
-                  <div className="flex items-start justify-between gap-1 w-full">
+                  <div className="flex items-center justify-between gap-1 w-full h-[26px] sm:h-[28px]">
                     <h2 
                       onClick={() => onViewFull?.(ad)}
-                      className="text-sm xs:text-base sm:text-lg font-serif font-bold leading-snug text-[#18181B] hover:text-[#E85B81] transition-colors block w-full break-words select-none cursor-pointer" 
+                      className="text-sm xs:text-base sm:text-lg font-serif font-bold leading-none text-[#18181B] hover:text-[#E85B81] transition-colors block w-full truncate select-none cursor-pointer" 
                       title={`Clic para abrir: ${ad.titulo}`}
                     >
                       {renderCleanBrandTitle(ad.titulo)}
@@ -260,75 +261,90 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
                     )}
                   </div>
 
-                  {/* Category and Country with Real SVG Flag */}
-                  <div className="flex items-center gap-1.5 flex-wrap mt-0.5 text-neutral-500 text-[10px] sm:text-xs font-sans font-medium w-full select-none">
-                    <span>{translateCategory(ad.categoria)}</span>
-                    <span className="text-neutral-300">·</span>
+                  {/* Category and Country with Real SVG Flag (Strictly 1 line) */}
+                  <div className="h-[20px] flex items-center gap-1.5 flex-nowrap mt-0.5 text-neutral-500 text-[10px] sm:text-xs font-sans font-medium w-full select-none truncate">
+                    <span className="truncate">{translateCategory(ad.categoria)}</span>
+                    <span className="text-neutral-300 shrink-0">·</span>
                     <span 
-                      className="inline-flex items-center gap-1.5 cursor-default select-none font-semibold text-neutral-700" 
+                      className="inline-flex items-center gap-1.5 cursor-default select-none font-semibold text-neutral-700 shrink-0" 
                       title={countryInfo.name}
                     >
-                      <CountryFlag countryCode={countryInfo.code} className="w-4 h-3 sm:w-4.5 sm:h-3.5" title={countryInfo.name} />
-                      <span className="text-[10px] sm:text-xs text-neutral-600">{countryInfo.name}</span>
+                      <CountryFlag countryCode={countryInfo.code} className="w-4 h-3 sm:w-4.5 sm:h-3.5 shrink-0" title={countryInfo.name} />
+                      <span className="text-[10px] sm:text-xs text-neutral-600 truncate">{countryInfo.name}</span>
                     </span>
                   </div>
 
-                  {/* Badges row with reserved height (28px) */}
-                  <div className="min-h-[28px] flex items-center gap-1.5 flex-wrap mt-1.5 select-none">
+                  {/* Badges row strictly in ONE single row matching reference image */}
+                  <div className="h-[26px] flex items-center gap-1 sm:gap-1.5 flex-nowrap overflow-x-auto no-scrollbar mt-1.5 select-none">
                     {ad.online && (
-                      <span className="inline-flex items-center text-[8px] sm:text-[9.5px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full shadow-2xs">
+                      <span className="inline-flex items-center text-[8px] sm:text-[9px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-1.5 sm:px-2 py-0.5 rounded-full shadow-2xs shrink-0 whitespace-nowrap">
                         {ad.onlineLabel === 'Sólo online' ? t('card.onlineOnly') : (ad.onlineLabel === 'También online' ? t('card.onlineAlso') : t('card.online'))}
                       </span>
                     )}
                     {ad.internacional && (
-                      <span className="inline-flex items-center text-[8px] sm:text-[9.5px] font-bold text-blue-800 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-full shadow-2xs">
+                      <span className="inline-flex items-center text-[8px] sm:text-[9px] font-bold text-blue-800 bg-blue-50 border border-blue-200/80 px-1.5 sm:px-2 py-0.5 rounded-full shadow-2xs shrink-0 whitespace-nowrap">
                         {t('card.international')}
                       </span>
                     )}
                     {ad.proveedor && (
-                      <span className="inline-flex items-center text-[8px] sm:text-[9.5px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full shadow-2xs">
+                      <span className="inline-flex items-center text-[8px] sm:text-[9px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-1.5 sm:px-2 py-0.5 rounded-full shadow-2xs shrink-0 whitespace-nowrap">
                         {t('card.supplier')}
                       </span>
                     )}
                     {!isAlianzaAd && ad.precio && ad.precio.trim() && (
-                      <span className="inline-flex items-center text-[8px] sm:text-[9.5px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300/80 px-2 py-0.5 rounded-full shadow-2xs">
+                      <span className="inline-flex items-center text-[8px] sm:text-[9px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300/80 px-1.5 sm:px-2 py-0.5 rounded-full shadow-2xs shrink-0 whitespace-nowrap">
                         {ad.precio.trim()}
                       </span>
                     )}
                   </div>
 
-                  {/* For Alianza ads: Description right below badges, then large fuchsia price and static promo badge beside it */}
-                  {isAlianzaAd ? (
-                    <div className="flex flex-col mt-2 gap-2">
-                      {ad.descripcion && ad.descripcion.trim() && (
-                        <p className="text-xs sm:text-[13px] font-medium text-neutral-800 leading-snug line-clamp-3 font-sans mt-0.5">
-                          {ad.descripcion.replace(/^#+/, '').trim()}
-                        </p>
-                      )}
+                  {/* For Alianza ads: Description right below badges, then price with superscript cents and static promo badge with exact sheet text */}
+                  {isAlianzaAd ? (() => {
+                    const promoText = (ad.promo || '').trim();
+                    const priceRaw = (ad.precio || '').trim();
+                    const priceDigits = (priceRaw.match(/\d/g) || []).length;
+                    const isVeryLongPrice = priceDigits >= 8 || priceRaw.length >= 13;
+                    const isLongPrice = priceDigits >= 6 || priceRaw.length >= 9;
 
-                      {(ad.precio || ad.promo) && (
-                        <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap mt-1 select-none">
-                          {ad.precio && ad.precio.trim() && (
-                            <span className="text-2xl sm:text-3xl font-black text-[#E85B81] font-sans tracking-tight">
-                              {ad.precio.trim()}
-                            </span>
-                          )}
-                          {ad.promo && ad.promo.trim() && (
-                            <div 
-                              className="px-3 py-1.5 rounded-lg bg-[#E85B81] text-white text-xs sm:text-sm font-bold tracking-wide shadow-xs select-none flex items-center gap-1.5 shrink-0"
-                              title={ad.promo.trim()}
-                            >
-                              <span className="text-xs">🏷️</span>
-                              <span>{ad.promo.trim()}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
+                    return (
+                      <div className="flex flex-col mt-2 gap-1.5 w-full min-w-0">
+                        {ad.descripcion && ad.descripcion.trim() && (
+                          <p className="text-xs sm:text-[13px] font-medium text-neutral-800 leading-snug line-clamp-3 font-sans mt-0.5">
+                            {ad.descripcion.replace(/^#+/, '').trim()}
+                          </p>
+                        )}
+
+                        {(priceRaw || promoText) && (
+                          <div className="flex items-center gap-2 flex-nowrap w-full min-w-0 overflow-hidden mt-1 select-none">
+                            {priceRaw && (
+                              <FormattedPrice 
+                                price={priceRaw}
+                                className={cn(
+                                  "font-black text-[#E85B81] font-sans tracking-tight whitespace-nowrap shrink-0 leading-none tabular-nums",
+                                  isVeryLongPrice 
+                                    ? "text-[12px] xs:text-[13px] sm:text-sm" 
+                                    : isLongPrice 
+                                      ? "text-sm xs:text-[15px] sm:text-base" 
+                                      : "text-base xs:text-lg sm:text-xl"
+                                )}
+                              />
+                            )}
+                            {promoText && (
+                              <div 
+                                className="px-2 xs:px-2.5 py-0.5 xs:py-1 rounded-md bg-[#E85B81] text-white text-[10.5px] xs:text-xs font-black tracking-tight shadow-2xs select-none whitespace-nowrap shrink-0 flex items-center justify-center leading-none"
+                                title={promoText}
+                              >
+                                <span>{promoText}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })() : (
                     <>
-                      {/* Hashtags in fuchsia color with reserved height (20px) */}
-                      <div className="min-h-[20px] flex items-center gap-1.5 flex-wrap mt-1 text-[10.5px] xs:text-[11px] sm:text-[11.5px] font-semibold text-[#E85B81] select-none font-sans leading-tight">
+                      {/* Hashtags in fuchsia color with fixed height (36px for exactly 2 lines) */}
+                      <div className="h-[36px] overflow-hidden flex flex-wrap content-start gap-x-1.5 gap-y-0.5 mt-1 text-[10.5px] xs:text-[11px] sm:text-[11.5px] font-semibold text-[#E85B81] select-none font-sans leading-tight">
                         {ad.hashtags && ad.hashtags.trim() && (
                           ad.hashtags.split(/\s+/).filter(Boolean).map((tag, i) => (
                             <span key={i} className="hover:underline cursor-default">
@@ -338,10 +354,10 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
                         )}
                       </div>
 
-                      {/* Promo info banner with scrolling news ticker text and favorite button color (#E85B81) - 3x slower speed */}
+                      {/* Promo info banner with scrolling news ticker text (accelerated 0.5x faster speed) */}
                       {ad.promo && ad.promo.trim() && (
                         <div 
-                          className="mt-2 w-full overflow-hidden rounded-full bg-[#E85B81] text-white px-2.5 py-1 flex items-center gap-2 shadow-2xs select-none group/promo"
+                          className="mt-2 w-full h-[30px] overflow-hidden rounded-full bg-[#E85B81] text-white px-2.5 py-1 flex items-center gap-2 shadow-2xs select-none group/promo"
                           title={ad.promo.trim()}
                         >
                           <div className="shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#DE4B73] text-[8.5px] font-black uppercase tracking-wider shadow-2xs z-10">
@@ -352,7 +368,7 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
                             <div
                               className="animate-ticker-marquee flex items-center gap-6 whitespace-nowrap"
                               style={{
-                                '--ticker-duration': `${Math.max(78, ad.promo.trim().length * 3.15)}s`,
+                                '--ticker-duration': `${Math.max(48, ad.promo.trim().length * 2.0)}s`,
                               } as React.CSSProperties}
                             >
                               {[ad.promo.trim(), ad.promo.trim(), ad.promo.trim(), ad.promo.trim()].map((promoItem, idx) => (

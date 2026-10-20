@@ -70,6 +70,10 @@ import ScratchAndDiscover from './components/ScratchAndDiscover';
 import RoosLogo from './components/RoosLogo';
 import { AnnouncementCard } from './components/AnnouncementCard';
 import AnnouncementModal from './components/AnnouncementModal';
+import { AlianzaCarousel } from './components/AlianzaCarousel';
+import { DirectoryCarousel } from './components/DirectoryCarousel';
+import OutletView from './components/OutletView';
+import DirectoryView from './components/DirectoryView';
 import { LocationCheckboxFilter } from './components/LocationCheckboxFilter';
 import { initGlobalButtonSounds } from './utils/sound';
 import { getOptimizedImageUrl, isLikelyImageUrl, isExplicitImageUrl } from './utils/imageUtils';
@@ -972,10 +976,11 @@ async function safeFetchJson<T = any>(res: Response | null | undefined, fallback
   }
 }
 
-export type AppView = 'main' | 'somos_roos' | 'educacion' | 'diamonds' | 'roos_capital' | 'emprendedoras' | 'faq' | 'ugc_program' | 'publicate' | 'ambassadors';
+export type AppView = 'main' | 'directorio' | 'somos_roos' | 'educacion' | 'diamonds' | 'roos_capital' | 'emprendedoras' | 'faq' | 'ugc_program' | 'publicate' | 'ambassadors' | 'outlet';
 
 export const VIEW_TO_PATH: Record<AppView, string> = {
   main: '/',
+  directorio: '/directorio',
   somos_roos: '/somos-roos',
   publicate: '/publicate',
   ugc_program: '/ugcprogram',
@@ -984,11 +989,13 @@ export const VIEW_TO_PATH: Record<AppView, string> = {
   diamonds: '/diamonds',
   faq: '/faq',
   roos_capital: '/roos-capital',
-  emprendedoras: '/emprendedoras'
+  emprendedoras: '/emprendedoras',
+  outlet: '/outlet'
 };
 
 export const PAGE_TITLES: Record<AppView, string> = {
   main: 'ROOS Capital | Directorio de Emprendimiento Femenino',
+  directorio: 'Directorio Oficial | Marcas y Empresas de Mujeres - ROOS Capital',
   somos_roos: 'Somos ROOS Capital | Red de Emprendimiento Femenino',
   publicate: 'Publíca tu Marca o Negocio | ROOS Capital',
   ugc_program: 'Programa UGC | Creadoras de Contenido y Marcas - ROOS Capital',
@@ -997,11 +1004,13 @@ export const PAGE_TITLES: Record<AppView, string> = {
   diamonds: 'Socias Diamante | Membresía Exclusiva - ROOS Capital',
   faq: 'Preguntas Frecuentes (FAQ) | Centro de Ayuda - ROOS Capital',
   roos_capital: 'ROOS Capital | Nuestra Visión y Ecosistema de Negocios',
-  emprendedoras: 'Emprendedoras | Directorio de Marcas de Mujeres - ROOS Capital'
+  emprendedoras: 'Emprendedoras | Directorio de Marcas de Mujeres - ROOS Capital',
+  outlet: 'Outlet | Ofertas Exclusivas & Anuncios Alianza - ROOS Capital'
 };
 
 export const PAGE_DESCRIPTIONS: Record<AppView, string> = {
   main: 'Directorio internacional y marketplace oficial de empresas y emprendimientos liderados por mujeres. Descubre marcas, programas UGC y socias exclusivas.',
+  directorio: 'Directorio internacional completo de empresas y emprendimientos liderados por mujeres de nuestra hoja oficial elementos columna directorio.',
   ugc_program: 'Conéctate con marcas y empresas líderes. Programa exclusivo para creadoras de contenido UGC sin mínimo de seguidores en ROOS Capital.',
   somos_roos: 'Conoce la historia, misión y comunidad internacional de mujeres empresarias y líderes detrás de ROOS Capital.',
   publicate: 'Registra tu empresa o emprendimiento liderado por mujeres en el directorio internacional de ROOS Capital e impulsa tus ventas.',
@@ -1010,7 +1019,8 @@ export const PAGE_DESCRIPTIONS: Record<AppView, string> = {
   diamonds: 'Accede a beneficios preferenciales, máxima visibilidad y alianzas estratégicas en el directorio oficial de ROOS Capital.',
   emprendedoras: 'Explora y compra directamente a empresas, pymes y creadoras de múltiples sectores sin intermediarios ni comisiones.',
   faq: 'Respuestas a dudas sobre cómo registrar tu marca, membresías, programas UGC y compras en el marketplace de ROOS Capital.',
-  roos_capital: 'Descubre nuestra visión estratégica para financiar, visibilizar y conectar a mujeres emprendedoras en Latinoamérica y el mundo.'
+  roos_capital: 'Descubre nuestra visión estratégica para financiar, visibilizar y conectar a mujeres emprendedoras en Latinoamérica y el mundo.',
+  outlet: 'Descubre todas las ofertas, promociones y productos de las marcas de Anuncios Alianza en el Outlet oficial de ROOS Capital.'
 };
 
 export function getViewFromLocation(): AppView {
@@ -1023,12 +1033,14 @@ export function getViewFromLocation(): AppView {
 
   const candidate = pathname || (sectionParam ? `/${sectionParam}` : '');
 
+  if (candidate === '/directorio' || candidate === '/directory') return 'directorio';
+  if (candidate === '/outlet' || candidate === '/anuncios-alianza' || candidate === '/ofertas' || candidate === '/alianza' || candidate === '/alianzas') return 'outlet';
   if (candidate === '/ugcprogram' || candidate === '/ugc-program' || candidate === '/ugc' || candidate === '/ugc_program') return 'ugc_program';
   if (candidate === '/somos-roos' || candidate === '/somosroos' || candidate === '/somos_roos') return 'somos_roos';
   if (candidate === '/publicate' || candidate === '/publicar') return 'publicate';
   if (candidate === '/embajadoras' || candidate === '/ambassadors' || candidate === '/embajadora') return 'ambassadors';
   if (candidate === '/educacion' || candidate === '/educacion-curso' || candidate === '/cursos') return 'educacion';
-  if (candidate === '/diamonds' || candidate === '/socias-diamante' || candidate === '/diamantes' || candidate === '/alianza' || candidate === '/anuncios-alianza' || candidate === '/alianzas' || candidate === '/anuncios') return 'diamonds';
+  if (candidate === '/diamonds' || candidate === '/socias-diamante' || candidate === '/diamantes') return 'diamonds';
   if (candidate === '/faq' || candidate === '/preguntas-frecuentes' || candidate === '/ayuda') return 'faq';
   if (candidate === '/roos-capital' || candidate === '/rooscapital' || candidate === '/roos_capital') return 'roos_capital';
   if (candidate === '/emprendedoras') return 'emprendedoras';
@@ -2221,176 +2233,27 @@ export default function App() {
   }, []);
 
   const { pageColumns, pageItemsList } = React.useMemo(() => {
-    const isSearchOrFilterActive = activeSearchTerm.trim() !== '' || activeLocationFilterCount > 0 || filterFavoritesOnly;
-
-    // If in Diamonds view OR if any search/filter is active OR if filtered by country, return standard pagination slice directly
-    if (isDiamondsView || selectedCountries.length > 0 || isSearchOrFilterActive) {
-      const pageSize = isMobile ? 17 : 28;
-      const validMobilePage = totalPagesMobile > 0 ? Math.min(Math.max(1, mobilePage), totalPagesMobile) : 1;
-      const validDesktopPage = totalPagesDesktop > 0 ? Math.min(Math.max(1, desktopPage), totalPagesDesktop) : 1;
-      const validPage = isMobile ? validMobilePage : validDesktopPage;
-      const startIndex = (validPage - 1) * pageSize;
-      const slice = filteredAnnouncements.slice(startIndex, startIndex + pageSize);
-
-      const count = columnCount;
-      const cols: Announcement[][] = Array.from({ length: count }, () => []);
-      const heights: number[] = Array(count).fill(0);
-      slice.forEach((ad) => {
-        let minCol = 0;
-        for (let i = 1; i < count; i++) {
-          if (heights[i] < heights[minCol]) minCol = i;
-        }
-        cols[minCol].push(ad);
-        const hasImg = Boolean(ad.imagen && ad.imagen.trim());
-        heights[minCol] += hasImg ? 420 : 185;
-      });
-
-      return { pageColumns: cols, pageItemsList: slice };
-    }
-
-    // In the general section of all countries:
-    // 1. Gather all unique announcements from "anuncios alianza" (strictly deduplicated)
-    const rawAlianza = (diamondsAnnouncements.length > 0 
-      ? diamondsAnnouncements 
-      : activeAnnouncements.filter(a => a.isAlianza || a.socio?.toLowerCase().includes('alianza'))
-    ).filter(Boolean);
-
-    const seenAlianzaKeys = new Set<string>();
-    const uniqueAlianzaAds: Announcement[] = [];
-    rawAlianza.forEach(ad => {
-      const k = `${(ad.titulo || '').trim().toLowerCase()}_${(ad.pais || '').trim().toLowerCase()}`;
-      if (k && !seenAlianzaKeys.has(k)) {
-        seenAlianzaKeys.add(k);
-        uniqueAlianzaAds.push(ad);
-      }
-    });
-
-    const currentPage = isMobile ? mobilePage : desktopPage;
     const pageSize = isMobile ? 17 : 28;
-    const adsPerPage = 5;
+    const validMobilePage = totalPagesMobile > 0 ? Math.min(Math.max(1, mobilePage), totalPagesMobile) : 1;
+    const validDesktopPage = totalPagesDesktop > 0 ? Math.min(Math.max(1, desktopPage), totalPagesDesktop) : 1;
+    const validPage = isMobile ? validMobilePage : validDesktopPage;
+    const startIndex = (validPage - 1) * pageSize;
+    const slice = filteredAnnouncements.slice(startIndex, startIndex + pageSize);
 
-    // Check if there are enough unique Alianza ads for this page (5 per page on desktop).
-    // If not enough for subsequent pages, they only appear on page 1 ("sino hay suficientes anuncios alianza, no los dupliques").
-    const hasEnoughForThisPage = currentPage === 1 
-      ? uniqueAlianzaAds.length >= 1 
-      : uniqueAlianzaAds.length >= currentPage * adsPerPage;
-
-    // 5 slots requested by user:
-    // Slot 1: Primera columna, puesto 3 (colIdx 0, pos 2)
-    // Slot 2: Segunda columna, puesto 6 (colIdx 1, pos 5)
-    // Slot 3: Tercera columna, puesto 1 (colIdx 2, pos 0)
-    // Slot 4: Tercera columna, puesto 4 (colIdx 2, pos 3)
-    // Slot 5: Cuarta columna, puesto 6 (colIdx 3, pos 5)
-    const adCol0Pos2 = hasEnoughForThisPage ? (uniqueAlianzaAds[(currentPage - 1) * adsPerPage + 0] || null) : null;
-    const adCol1Pos5 = hasEnoughForThisPage ? (uniqueAlianzaAds[(currentPage - 1) * adsPerPage + 1] || null) : null;
-    const adCol2Pos0 = hasEnoughForThisPage ? (uniqueAlianzaAds[(currentPage - 1) * adsPerPage + 2] || null) : null;
-    const adCol2Pos3 = hasEnoughForThisPage ? (uniqueAlianzaAds[(currentPage - 1) * adsPerPage + 3] || null) : null;
-    const adCol3Pos5 = hasEnoughForThisPage ? (uniqueAlianzaAds[(currentPage - 1) * adsPerPage + 4] || null) : null;
-
-    // 2. Only filter out the Alianza ads that are placed in the featured slots on this specific page
-    const currentPageFeaturedKeys = new Set(
-      [adCol0Pos2, adCol1Pos5, adCol2Pos0, adCol2Pos3, adCol3Pos5]
-        .filter(Boolean)
-        .map(a => `${(a!.titulo || '').trim().toLowerCase()}_${(a!.pais || '').trim().toLowerCase()}`)
-    );
-    const regularPool = filteredAnnouncements.filter(ad => {
-      const k = `${(ad.titulo || '').trim().toLowerCase()}_${(ad.pais || '').trim().toLowerCase()}`;
-      return !currentPageFeaturedKeys.has(k);
-    });
-
-    const alianzaSlotsFilled = (adCol0Pos2 ? 1 : 0) + (adCol1Pos5 ? 1 : 0) + (adCol2Pos0 ? 1 : 0) + (adCol2Pos3 ? 1 : 0) + (adCol3Pos5 ? 1 : 0);
-    const regularItemsNeeded = pageSize - alianzaSlotsFilled;
-
-    // Calculate regular items offset for current page based on previous pages
-    let regularStartIndex = 0;
-    for (let p = 1; p < currentPage; p++) {
-      const pHasEnough = p === 1 ? true : uniqueAlianzaAds.length >= p * adsPerPage;
-      let pAlianzaCount = 0;
-      if (pHasEnough) {
-        for (let s = 0; s < adsPerPage; s++) {
-          if (uniqueAlianzaAds[(p - 1) * adsPerPage + s]) pAlianzaCount++;
-        }
-      }
-      regularStartIndex += (pageSize - pAlianzaCount);
-    }
-
-    const pageRegularItems = regularPool.slice(regularStartIndex, regularStartIndex + regularItemsNeeded);
-    let regPointer = 0;
-
-    if (columnCount === 4) {
-      // Build 4 columns with exactly 7 items each
-      const col0: Announcement[] = [];
-      const col1: Announcement[] = [];
-      const col2: Announcement[] = [];
-      const col3: Announcement[] = [];
-
-      // Columna 1 (7 anuncios): puesto 3 (índice 2) es Alianza
-      for (let i = 0; i < 7; i++) {
-        if (i === 2 && adCol0Pos2) {
-          col0.push(adCol0Pos2);
-        } else if (regPointer < pageRegularItems.length) {
-          col0.push(pageRegularItems[regPointer++]);
-        }
-      }
-
-      // Columna 2 (7 anuncios): puesto 6 (índice 5) es Alianza
-      for (let i = 0; i < 7; i++) {
-        if (i === 5 && adCol1Pos5) {
-          col1.push(adCol1Pos5);
-        } else if (regPointer < pageRegularItems.length) {
-          col1.push(pageRegularItems[regPointer++]);
-        }
-      }
-
-      // Columna 3 (7 anuncios): puesto 1 (índice 0) y puesto 4 (índice 3) son Alianza
-      for (let i = 0; i < 7; i++) {
-        if (i === 0 && adCol2Pos0) {
-          col2.push(adCol2Pos0);
-        } else if (i === 3 && adCol2Pos3) {
-          col2.push(adCol2Pos3);
-        } else if (regPointer < pageRegularItems.length) {
-          col2.push(pageRegularItems[regPointer++]);
-        }
-      }
-
-      // Columna 4 (7 anuncios): puesto 6 (índice 5) es Alianza
-      for (let i = 0; i < 7; i++) {
-        if (i === 5 && adCol3Pos5) {
-          col3.push(adCol3Pos5);
-        } else if (regPointer < pageRegularItems.length) {
-          col3.push(pageRegularItems[regPointer++]);
-        }
-      }
-
-      const flatItems = [...col0, ...col1, ...col2, ...col3];
-      return { pageColumns: [col0, col1, col2, col3], pageItemsList: flatItems };
-    }
-
-    // Adapt for 2 columns (mobile) or 3 columns (tablet)
     const count = columnCount;
     const cols: Announcement[][] = Array.from({ length: count }, () => []);
-    const itemsPerCol = Math.ceil(pageSize / count);
-    const availableAlianza = [adCol0Pos2, adCol1Pos5, adCol2Pos0, adCol2Pos3, adCol3Pos5].filter(Boolean) as Announcement[];
-    let aliPointer = 0;
-
-    for (let c = 0; c < count; c++) {
-      const colCapacity = (c === count - 1) ? (pageSize - cols.flat().length) : itemsPerCol;
-      for (let pos = 0; pos < colCapacity; pos++) {
-        const isTargetSlot = (c === 0 && pos === 2) || (c === 1 && pos === 5) || (c === 0 && pos === 0 && count === 2);
-        if (isTargetSlot && aliPointer < availableAlianza.length) {
-          cols[c].push(availableAlianza[aliPointer++]);
-        } else if (regPointer < pageRegularItems.length) {
-          cols[c].push(pageRegularItems[regPointer++]);
-        }
+    const heights: number[] = Array(count).fill(0);
+    slice.forEach((ad) => {
+      let minCol = 0;
+      for (let i = 1; i < count; i++) {
+        if (heights[i] < heights[minCol]) minCol = i;
       }
-    }
+      cols[minCol].push(ad);
+      const hasImg = Boolean(ad.imagen && ad.imagen.trim());
+      heights[minCol] += hasImg ? 420 : 185;
+    });
 
-    while (aliPointer < availableAlianza.length) {
-      cols[0].push(availableAlianza[aliPointer++]);
-    }
-
-    const flatItems = cols.flat();
-    return { pageColumns: cols, pageItemsList: flatItems };
+    return { pageColumns: cols, pageItemsList: slice };
   }, [
     filteredAnnouncements,
     isMobile,
@@ -2398,10 +2261,6 @@ export default function App() {
     desktopPage,
     totalPagesMobile,
     totalPagesDesktop,
-    diamondsAnnouncements,
-    activeAnnouncements,
-    isDiamondsView,
-    selectedCountries,
     columnCount
   ]);
 
@@ -2587,6 +2446,33 @@ export default function App() {
           />
         )}
 
+        {/* Outlet View (Sección independiente para Anuncios Alianza) */}
+        {currentView === 'outlet' && (
+          <OutletView 
+            ads={diamondsAnnouncements.length > 0 ? diamondsAnnouncements : activeAnnouncements.filter(a => a.isAlianza)}
+            onBack={() => navigateToView('main')}
+            onViewFull={(ad) => setSelectedAdForModal(ad)}
+            onToggleFavorite={handleToggleFavorite}
+            isFavorite={isFavorite}
+          />
+        )}
+
+        {/* Directorio View (Sección independiente para Directorio Oficial de Negocios) */}
+        {currentView === 'directorio' && (
+          <DirectoryView 
+            ads={announcements.filter(a => !a.isAlianza)}
+            availableCategories={availableCategories}
+            availableCountries={availableCountries}
+            availableStates={availableStates}
+            availableMunicipios={availableMunicipios}
+            onBack={() => navigateToView('main')}
+            onViewFull={(ad) => setSelectedAdForModal(ad)}
+            onToggleFavorite={handleToggleFavorite}
+            isFavorite={isFavorite}
+            onNavigateToOutlet={() => navigateToView('outlet')}
+          />
+        )}
+
 
 
       {/* Main View */}
@@ -2623,241 +2509,20 @@ export default function App() {
                 <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-[#18181B] mt-1.5 mb-2.5 tracking-tight">
                   {renderStyledTitleWithAmpersand(t('directory.title'))}
                 </h2>
-                <p className="text-sm sm:text-base text-neutral-600 max-w-xl sm:max-w-2xl lg:max-w-3xl mx-auto font-sans">
+                <p className="text-xs sm:text-sm md:text-base text-neutral-600 w-full text-center whitespace-nowrap overflow-x-auto no-scrollbar font-sans">
                   {t('directory.subtitle')}
                 </p>
               </div>
 
-              {/* Filter Bar Styling */}
-              <div className="w-full mt-2 flex flex-col items-center gap-6" id="desktop-filter-bar">
-                <div className="w-full flex flex-row items-center gap-3 h-14 max-w-3xl mx-auto">
-                  {/* Search Bar */}
-                  <div className="relative flex-1 h-full flex items-center" id="desktop-search-container">
-                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
-                    <input 
-                      type="text" 
-                      placeholder={language === 'en' ? 'Search brands, products, services...' : animatedPlaceholder}
-                      value={activeSearchTerm}
-                      onChange={(e) => setActiveSearchTerm(e.target.value)}
-                      className="w-full h-full bg-white border border-[#EFE8DF] hover:border-[#E85B81] rounded-full pl-16 pr-8 text-sm font-medium text-neutral-800 focus:outline-none focus:border-[#E85B81] focus:ring-4 focus:ring-[#E85B81]/10 transition-all shadow-sm placeholder:text-neutral-400"
-                      id="desktop-search-input"
-                    />
-                  </div>
-
-                  {/* Unified Filter Button */}
-                  <div className="relative h-full flex items-center z-30 shrink-0" id="desktop-filter-container">
-                    <button
-                      onClick={() => {
-                        setIsLocDropdownOpen(!isLocDropdownOpen);
-                      }}
-                      className={`group relative h-14 w-14 rounded-full flex items-center justify-center focus:outline-none hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm border cursor-pointer ${
-                        activeLocationFilterCount > 0 
-                          ? 'border-[#E85B81] bg-[#FCE8EF] text-[#E85B81]' 
-                          : 'bg-white border-[#EFE8DF] hover:border-[#E85B81] text-[#E85B81] hover:bg-[#FFF9FB]'
-                      }`}
-                      id="desktop-location-toggle-btn"
-                      title={language === 'en' ? 'Filters' : 'Filtros'}
-                      aria-label={language === 'en' ? 'Filters' : 'Filtros'}
-                    >
-                      <MapPin className="w-5 h-5 text-[#E85B81]" />
-                      {activeLocationFilterCount > 0 && (
-                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#E85B81] text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-xs">
-                          {activeLocationFilterCount}
-                        </span>
-                      )}
-                    </button>
-
-                    <AnimatePresence>
-                      {isLocDropdownOpen && !isMobile && (
-                        <>
-                          {/* Clear click-away detector */}
-                          <div 
-                            className="fixed inset-0 z-10 bg-transparent" 
-                            onClick={() => setIsLocDropdownOpen(false)} 
-                            id="desktop-location-overlay"
-                          />
-                          <motion.div
-                            initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                            transition={{ duration: 0.15 }}
-                            className="absolute top-full right-0 mt-2 bg-white border-2 border-brand-wine/10 rounded-2xl shadow-2xl z-20 overflow-hidden w-80 sm:w-96"
-                            id="desktop-location-dropdown"
-                          >
-                            <LocationCheckboxFilter
-                              defaultSection="categorias"
-                              availableCategories={availableCategories}
-                              selectedCategories={selectedCategories}
-                              onChangeCategories={setSelectedCategories}
-                              getCategoryCount={getCategoryCount}
-                              availableCountries={availableCountries}
-                              availableStates={availableStates}
-                              availableMunicipios={availableMunicipios}
-                              selectedCountries={selectedCountries}
-                              onChangeCountries={handleCountrySelection}
-                              selectedStates={selectedStates}
-                              onChangeStates={handleStateSelection}
-                              selectedMunicipios={selectedMunicipios}
-                              onChangeMunicipios={setSelectedMunicipios}
-                              filterRemoto={filterRemoto}
-                              onChangeRemoto={setFilterRemoto}
-                              filterInternacional={filterInternacional}
-                              onChangeInternacional={setFilterInternacional}
-                              filterProveedor={filterProveedor}
-                              onChangeProveedor={setFilterProveedor}
-                              onClearAll={clearAllLocationFilters}
-                              countRemoto={countRemoto}
-                              countInternacional={countInternacional}
-                              countProveedor={countProveedor}
-                              getCountryCount={getCountryCount}
-                              getStateCount={getStateCount}
-                              getMunicipioCount={getMunicipioCount}
-                              onClose={() => setIsLocDropdownOpen(false)}
-                            />
-                          </motion.div>
-                        </>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-
-                {/* Horizontal Category Emoji Bar right below search bar matching reference image */}
-                <div className="w-full max-w-4xl mx-auto px-1 -mt-3 mb-1" id="desktop-category-emoji-bar-container">
-                  <CategoryEmojiBar
-                    categories={availableCategories}
-                    selectedCategories={selectedCategories}
-                    onSelectCategory={(cat) => {
-                      if (!cat) {
-                        setSelectedCategories([]);
-                      } else {
-                        if (selectedCategories.includes(cat) && selectedCategories.length === 1) {
-                          setSelectedCategories([]);
-                        } else {
-                          setSelectedCategories([cat]);
-                        }
-                      }
-                      setDesktopPage(1);
-                      setMobilePage(1);
-                    }}
-                    translateCategory={translateCategory}
-                    language={language}
-                  />
-                </div>
-
-                {/* Active Filter Chips on Desktop */}
-                {activeLocationFilterCount > 0 && (
-                  <div className="w-full flex items-center gap-1.5 flex-wrap px-2" id="desktop-active-filter-chips">
-                    <span className="text-[10px] uppercase font-bold text-[#E85B81] tracking-wider flex items-center gap-1 mr-1">
-                      <Filter className="w-3 h-3 text-[#E85B81]" />
-                      {language === 'en' ? 'Active filters:' : 'Filtros activos:'}
-                    </span>
-                    {selectedCategories.map(cat => (
-                      <span key={cat} className="inline-flex items-center gap-1.5 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-2xs">
-                        <ShoppingBag className="w-3 h-3 text-[#E85B81]" />
-                        <span>{translateCategory(cat)}</span>
-                        <button 
-                          onClick={() => setSelectedCategories(prev => prev.filter(c => c !== cat))} 
-                          className="hover:text-[#DE4B73] p-0.5 rounded-full hover:bg-[#E85B81]/15 transition-colors"
-                          title={language === 'en' ? `Remove ${translateCategory(cat)}` : `Quitar ${cat}`}
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
-                    {filterProveedor && (
-                      <span className="inline-flex items-center gap-1.5 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-2xs">
-                        <Package className="w-3 h-3 text-[#E85B81]" />
-                        <span>{language === 'en' ? 'Supplier' : 'Proveedor'}</span>
-                        <button 
-                          onClick={() => setFilterProveedor(false)} 
-                          className="hover:text-[#DE4B73] p-0.5 rounded-full hover:bg-[#E85B81]/15 transition-colors"
-                          title={language === 'en' ? 'Remove supplier filter' : 'Quitar filtro de proveedor'}
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    )}
-                    {filterRemoto && (
-                      <span className="inline-flex items-center gap-1.5 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-2xs">
-                        <Laptop className="w-3 h-3 text-[#E85B81]" />
-                        <span>{language === 'en' ? 'Remote' : 'Remoto'}</span>
-                        <button 
-                          onClick={() => setFilterRemoto(false)} 
-                          className="hover:text-[#DE4B73] p-0.5 rounded-full hover:bg-[#E85B81]/15 transition-colors"
-                          title={language === 'en' ? 'Remove remote filter' : 'Quitar filtro remoto'}
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    )}
-                    {filterInternacional && (
-                      <span className="inline-flex items-center gap-1.5 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-2xs">
-                        <Globe className="w-3 h-3 text-[#E85B81]" />
-                        <span>{language === 'en' ? 'International' : 'Internacional'}</span>
-                        <button 
-                          onClick={() => setFilterInternacional(false)} 
-                          className="hover:text-[#DE4B73] p-0.5 rounded-full hover:bg-[#E85B81]/15 transition-colors"
-                          title={language === 'en' ? 'Remove international filter' : 'Quitar filtro internacional'}
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    )}
-                    {selectedCountries.map(c => {
-                      const cName = translateCountryName(c, language);
-                      return (
-                        <span key={c} className="inline-flex items-center gap-1.5 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-2xs">
-                          <CountryFlag countryCode={getCountryInfo(c).code} className="w-4 h-3 shrink-0" title={cName} />
-                          <span>{cName}</span>
-                          <button 
-                            onClick={() => handleCountrySelection([])} 
-                            className="hover:text-[#DE4B73] p-0.5 rounded-full hover:bg-[#E85B81]/15 transition-colors"
-                            title={language === 'en' ? `Remove ${cName}` : `Quitar ${c}`}
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      );
-                    })}
-                    {selectedStates.map(s => (
-                      <span key={s} className="inline-flex items-center gap-1.5 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-2xs">
-                        <Building2 className="w-3 h-3 text-[#E85B81]" />
-                        <span>{s}</span>
-                        <button 
-                          onClick={() => {
-                            setSelectedStates(prev => prev.filter(x => x !== s));
-                            setSelectedMunicipios([]);
-                          }} 
-                          className="hover:text-[#DE4B73] p-0.5 rounded-full hover:bg-[#E85B81]/15 transition-colors"
-                          title={language === 'en' ? `Remove ${s}` : `Quitar ${s}`}
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
-                    {selectedMunicipios.map(m => (
-                      <span key={m} className="inline-flex items-center gap-1.5 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-2xs">
-                        <Landmark className="w-3 h-3 text-[#E85B81]" />
-                        <span>{m}</span>
-                        <button 
-                          onClick={() => setSelectedMunicipios(prev => prev.filter(x => x !== m))} 
-                          className="hover:text-[#DE4B73] p-0.5 rounded-full hover:bg-[#E85B81]/15 transition-colors"
-                          title={language === 'en' ? `Remove ${m}` : `Quitar ${m}`}
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
-                    <button
-                      onClick={clearAllLocationFilters}
-                      className="text-xs font-extrabold text-[#E85B81] hover:text-[#DE4B73] underline ml-1 cursor-pointer transition-colors"
-                    >
-                      {language === 'en' ? 'Clear all' : 'Limpiar todos'}
-                    </button>
-                  </div>
-                )}
-
-                {/* Noticias Linear Banner Line (desactivada temporalmente) */}
+              {/* Automatic Carousel with the first 8 alliance ads on desktop */}
+              <div className="w-full max-w-7xl mx-auto px-1 my-1">
+                <AlianzaCarousel
+                  ads={diamondsAnnouncements.length > 0 ? diamondsAnnouncements : activeAnnouncements.filter(a => a.isAlianza)}
+                  onViewFull={(ad) => setSelectedAdForModal(ad)}
+                  onToggleFavorite={handleToggleFavorite}
+                  isFavorite={isFavorite}
+                  onNavigateToOutlet={() => navigateToView('outlet')}
+                />
               </div>
             </div>
 
@@ -2870,240 +2535,21 @@ export default function App() {
                 <h2 className="font-serif text-2xl font-bold text-[#18181B] mt-0.5 mb-1 tracking-tight">
                   {renderStyledTitleWithAmpersand(t('directory.mobileTitle'))}
                 </h2>
-                <p className="text-xs sm:text-sm text-neutral-600 max-w-md mx-auto font-sans mt-0.5">
+                <p className="text-[10px] xs:text-[11px] sm:text-xs text-neutral-600 w-full text-center whitespace-nowrap overflow-x-auto no-scrollbar font-sans mt-0.5">
                   {t('directory.subtitle')}
                 </p>
               </div>
 
-              {/* Search Bar + Single Filter Button below on Mobile */}
-              <div className="w-full flex flex-row items-center gap-2 h-11" id="mobile-search-filter-row">
-                {/* Search Bar */}
-                <div className="relative flex-1 h-full flex items-center" id="mobile-search-container">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                  <input 
-                    type="text" 
-                    placeholder={language === 'en' ? 'Search brands, categories...' : animatedPlaceholder}
-                    value={activeSearchTerm}
-                    onChange={(e) => setActiveSearchTerm(e.target.value)}
-                    className="w-full h-full bg-white border border-[#EFE8DF] hover:border-[#E85B81] rounded-full pl-11 pr-4 text-xs font-medium text-neutral-800 focus:outline-none focus:border-[#E85B81] focus:ring-4 focus:ring-[#E85B81]/10 transition-all shadow-sm placeholder:text-neutral-400"
-                    id="mobile-search-input"
-                  />
-                </div>
-
-                {/* Single Filter Button on Mobile (MapPin icon) */}
-                <div className="relative h-full w-11 flex items-center z-40 shrink-0" id="mobile-filter-btn-container">
-                  <button
-                    onClick={() => {
-                      setMobileFilterSection('categorias');
-                      setIsLocDropdownOpen(true);
-                    }}
-                    className={`group relative w-full h-full rounded-full flex items-center justify-center focus:outline-none transition-all shadow-sm border ${
-                      activeLocationFilterCount > 0 
-                        ? 'border-[#E85B81] bg-[#FCE8EF] text-[#E85B81]' 
-                        : 'bg-white border-[#EFE8DF] hover:border-[#E85B81] text-[#E85B81] hover:bg-[#FFF9FB]'
-                    }`}
-                    title={language === 'en' ? 'Filters' : 'Filtros'}
-                    aria-label={language === 'en' ? 'Filters' : 'Filtros'}
-                    id="mobile-filter-toggle-btn"
-                  >
-                    <MapPin className="w-4 h-4 text-[#E85B81]" />
-                    {activeLocationFilterCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#E85B81] text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-xs">
-                        {activeLocationFilterCount}
-                      </span>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Horizontal Category Emoji Bar right below search bar on mobile matching reference image */}
-              <div className="w-full mt-2" id="mobile-category-emoji-bar-container">
-                <CategoryEmojiBar
-                  categories={availableCategories}
-                  selectedCategories={selectedCategories}
-                  onSelectCategory={(cat) => {
-                    if (!cat) {
-                      setSelectedCategories([]);
-                    } else {
-                      if (selectedCategories.includes(cat) && selectedCategories.length === 1) {
-                        setSelectedCategories([]);
-                      } else {
-                        setSelectedCategories([cat]);
-                      }
-                    }
-                    setDesktopPage(1);
-                    setMobilePage(1);
-                  }}
-                  translateCategory={translateCategory}
-                  language={language}
+              {/* Automatic Carousel with the first 8 alliance ads on mobile */}
+              <div className="w-full px-1 my-1">
+                <AlianzaCarousel
+                  ads={diamondsAnnouncements.length > 0 ? diamondsAnnouncements : activeAnnouncements.filter(a => a.isAlianza)}
+                  onViewFull={(ad) => setSelectedAdForModal(ad)}
+                  onToggleFavorite={handleToggleFavorite}
+                  isFavorite={isFavorite}
+                  onNavigateToOutlet={() => navigateToView('outlet')}
                 />
               </div>
-
-              {/* Mobile Location Modal / Bottom Sheet */}
-              <AnimatePresence>
-                {isLocDropdownOpen && isMobile && (
-                  <>
-                    <div 
-                      className="fixed inset-0 z-[120] bg-black/40 backdrop-blur-xs" 
-                      onClick={() => setIsLocDropdownOpen(false)} 
-                    />
-                    <motion.div
-                      initial={{ opacity: 0, y: 100 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 100 }}
-                      transition={{ duration: 0.2 }}
-                      className="fixed inset-x-2 bottom-2 top-auto z-[130] bg-white rounded-2xl shadow-2xl border-2 border-brand-wine/10 max-h-[85vh] overflow-hidden flex flex-col"
-                    >
-                      <LocationCheckboxFilter
-                        defaultSection={mobileFilterSection}
-                        availableCategories={availableCategories}
-                        selectedCategories={selectedCategories}
-                        onChangeCategories={setSelectedCategories}
-                        getCategoryCount={getCategoryCount}
-                        availableCountries={availableCountries}
-                        availableStates={availableStates}
-                        availableMunicipios={availableMunicipios}
-                        selectedCountries={selectedCountries}
-                        onChangeCountries={handleCountrySelection}
-                        selectedStates={selectedStates}
-                        onChangeStates={handleStateSelection}
-                        selectedMunicipios={selectedMunicipios}
-                        onChangeMunicipios={setSelectedMunicipios}
-                        filterRemoto={filterRemoto}
-                        onChangeRemoto={setFilterRemoto}
-                        filterInternacional={filterInternacional}
-                        onChangeInternacional={setFilterInternacional}
-                        filterProveedor={filterProveedor}
-                        onChangeProveedor={setFilterProveedor}
-                        onClearAll={clearAllLocationFilters}
-                        countRemoto={countRemoto}
-                        countInternacional={countInternacional}
-                        countProveedor={countProveedor}
-                        getCountryCount={getCountryCount}
-                        getStateCount={getStateCount}
-                        getMunicipioCount={getMunicipioCount}
-                        isMobileCompact={true}
-                        onClose={() => setIsLocDropdownOpen(false)}
-                      />
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-
-              {/* Active Location Filter Chips on Mobile */}
-              {activeLocationFilterCount > 0 && (
-                <div className="w-full flex items-center gap-1.5 flex-wrap px-1 pt-1.5 pb-0.5" id="mobile-active-filter-chips">
-                  <span className="text-[9.5px] uppercase font-bold text-[#E85B81] tracking-wider flex items-center gap-1 mr-0.5">
-                    <Filter className="w-2.5 h-2.5 text-[#E85B81]" />
-                    {language === 'en' ? 'Filters:' : 'Filtros:'}
-                  </span>
-                  {selectedCategories.map(cat => (
-                    <span key={cat} className="inline-flex items-center gap-1 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2 py-0.5 rounded-full text-[10.5px] font-bold shadow-2xs">
-                      <ShoppingBag className="w-2.5 h-2.5 text-[#E85B81]" />
-                      <span>{translateCategory(cat)}</span>
-                      <button 
-                        onClick={() => setSelectedCategories(prev => prev.filter(c => c !== cat))} 
-                        className="hover:text-[#DE4B73] p-0.5 rounded-full hover:bg-[#E85B81]/15 transition-colors"
-                        title={language === 'en' ? `Remove ${translateCategory(cat)}` : `Quitar ${cat}`}
-                      >
-                        <X className="w-2.5 h-2.5" />
-                      </button>
-                    </span>
-                  ))}
-                  {filterProveedor && (
-                    <span className="inline-flex items-center gap-1 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2 py-0.5 rounded-full text-[10.5px] font-bold shadow-2xs">
-                      <Package className="w-2.5 h-2.5 text-[#E85B81]" />
-                      <span>{language === 'en' ? 'Supplier' : 'Proveedor'}</span>
-                      <button 
-                        onClick={() => setFilterProveedor(false)} 
-                        className="hover:text-[#DE4B73] p-0.5 rounded-full hover:bg-[#E85B81]/15 transition-colors"
-                        title={language === 'en' ? 'Remove supplier filter' : 'Quitar proveedor'}
-                      >
-                        <X className="w-2.5 h-2.5" />
-                      </button>
-                    </span>
-                  )}
-                  {filterRemoto && (
-                    <span className="inline-flex items-center gap-1 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2 py-0.5 rounded-full text-[10.5px] font-bold shadow-2xs">
-                      <Laptop className="w-2.5 h-2.5 text-[#E85B81]" />
-                      <span>{language === 'en' ? 'Remote' : 'Remoto'}</span>
-                      <button 
-                        onClick={() => setFilterRemoto(false)} 
-                        className="hover:text-[#DE4B73] p-0.5 rounded-full hover:bg-[#E85B81]/15 transition-colors"
-                        title={language === 'en' ? 'Remove remote filter' : 'Quitar remoto'}
-                      >
-                        <X className="w-2.5 h-2.5" />
-                      </button>
-                    </span>
-                  )}
-                  {filterInternacional && (
-                    <span className="inline-flex items-center gap-1 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2 py-0.5 rounded-full text-[10.5px] font-bold shadow-2xs">
-                      <Globe className="w-2.5 h-2.5 text-[#E85B81]" />
-                      <span>{language === 'en' ? 'International' : 'Internacional'}</span>
-                      <button 
-                        onClick={() => setFilterInternacional(false)} 
-                        className="hover:text-[#DE4B73] p-0.5 rounded-full hover:bg-[#E85B81]/15 transition-colors"
-                        title={language === 'en' ? 'Remove international filter' : 'Quitar internacional'}
-                      >
-                        <X className="w-2.5 h-2.5" />
-                      </button>
-                    </span>
-                  )}
-                  {selectedCountries.map(c => {
-                    const cName = translateCountryName(c, language);
-                    return (
-                      <span key={c} className="inline-flex items-center gap-1 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2 py-0.5 rounded-full text-[10.5px] font-bold shadow-2xs">
-                        <CountryFlag countryCode={getCountryInfo(c).code} className="w-3.5 h-2.5 shrink-0" title={cName} />
-                        <span>{cName}</span>
-                        <button 
-                          onClick={() => handleCountrySelection([])} 
-                          className="hover:text-[#DE4B73] p-0.5 rounded-full hover:bg-[#E85B81]/15 transition-colors"
-                          title={language === 'en' ? `Remove ${cName}` : `Quitar ${c}`}
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </span>
-                    );
-                  })}
-                  {selectedStates.map(s => (
-                    <span key={s} className="inline-flex items-center gap-1 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2 py-0.5 rounded-full text-[10.5px] font-bold shadow-2xs">
-                      <Building2 className="w-2.5 h-2.5 text-[#E85B81]" />
-                      <span>{s}</span>
-                      <button 
-                        onClick={() => {
-                          setSelectedStates(prev => prev.filter(x => x !== s));
-                          setSelectedMunicipios([]);
-                        }} 
-                        className="hover:text-[#DE4B73] p-0.5 rounded-full hover:bg-[#E85B81]/15 transition-colors"
-                        title={language === 'en' ? `Remove ${s}` : `Quitar ${s}`}
-                      >
-                        <X className="w-2.5 h-2.5" />
-                      </button>
-                    </span>
-                  ))}
-                  {selectedMunicipios.map(m => (
-                    <span key={m} className="inline-flex items-center gap-1 bg-[#FCE8EF] text-[#E85B81] border border-[#E85B81]/30 px-2 py-0.5 rounded-full text-[10.5px] font-bold shadow-2xs">
-                      <Landmark className="w-2.5 h-2.5 text-[#E85B81]" />
-                      <span>{m}</span>
-                      <button 
-                        onClick={() => setSelectedMunicipios(prev => prev.filter(x => x !== m))} 
-                        className="hover:text-[#DE4B73] p-0.5 rounded-full hover:bg-[#E85B81]/15 transition-colors"
-                        title={language === 'en' ? `Remove ${m}` : `Quitar ${m}`}
-                      >
-                        <X className="w-2.5 h-2.5" />
-                      </button>
-                    </span>
-                  ))}
-                  <button
-                    onClick={clearAllLocationFilters}
-                    className="text-[10.5px] font-extrabold text-[#E85B81] hover:text-[#DE4B73] underline ml-1 cursor-pointer transition-colors"
-                  >
-                    {language === 'en' ? 'Clear' : 'Limpiar'}
-                  </button>
-                </div>
-              )}
-
-              {/* Noticias Linear Banner Line (desactivada temporalmente) */}
             </div>
 
           </header>
@@ -3147,167 +2593,20 @@ export default function App() {
           )}
 
           {loading || error ? (
-            <div className="flex flex-col items-center justify-center py-32">
+            <div className="flex flex-col items-center justify-center py-20">
               <div className="relative">
-                <RefreshCw className="w-16 h-16 text-brand-orange animate-spin" />
-                <div className="absolute inset-0 w-16 h-16 border-4 border-brand-orange/20 rounded-full animate-ping" />
+                <RefreshCw className="w-12 h-12 text-[#E85B81] animate-spin" />
               </div>
             </div>
           ) : (
-            <div 
-              className={cn(
-                "grid gap-2 xs:gap-3.5 sm:gap-6 xl:gap-8 w-full items-start",
-                columnCount === 2 ? "grid-cols-2" : columnCount === 3 ? "grid-cols-3" : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-              )}
-              style={{
-                gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`
-              }}
-            >
-              {masonryColumns.map((colAds, colIdx) => (
-                <div key={`masonry-col-${colIdx}`} className="flex flex-col gap-2 xs:gap-3.5 sm:gap-6 xl:gap-8 w-full">
-                  <AnimatePresence mode="popLayout">
-                    {colAds.map((ad, idx) => (
-                      <AnnouncementCard 
-                        key={`${ad.id || ad.titulo}-${colIdx}-${idx}`} 
-                        ad={ad} 
-                        isDiamonds={false} 
-                        isFavorite={isFavorite(ad)}
-                        onToggleFavorite={() => handleToggleFavorite(ad)}
-                        onViewFull={(selected) => setSelectedAdForModal(selected)}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Pagination for DESKTOP and all non-mobile views, displaying 28 ads per page */}
-          {!isMobile && totalPagesDesktop > 1 && (
-            <div className="hidden md:flex flex-col items-center justify-center gap-4 mt-12 pb-2 animate-fade-in" id="desktop-pagination-controls">
-              <div className="flex items-center justify-between w-fit min-w-[340px] bg-white/95 border border-brand-pink/30 px-6 py-2.5 rounded-full shadow-[0_8px_30px_rgba(168,89,103,0.06)] select-none">
-                {/* Previous Page Button */}
-                <button
-                  onClick={() => {
-                    if (desktopPage > 1) {
-                      setDesktopPage(prev => prev - 1);
-                      const el = document.getElementById('desktop-header-wrapper');
-                      if (el) {
-                        const y = el.getBoundingClientRect().top + window.scrollY - 40;
-                        window.scrollTo({ top: y, behavior: 'smooth' });
-                      } else {
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }
-                    }
-                  }}
-                  disabled={desktopPage === 1}
-                  className={cn(
-                    "px-4 py-1.5 text-[11px] font-sans font-bold uppercase tracking-wider rounded-full transition-all flex items-center gap-1.5 focus:outline-none shrink-0",
-                    desktopPage === 1 
-                      ? "text-neutral-300 pointer-events-none select-none" 
-                      : "text-brand-wine hover:text-brand-pink bg-brand-wine/5 hover:bg-brand-pink/10 cursor-pointer active:scale-95"
-                  )}
-                  id="btn-desktop-prev-page"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                  <span>Anterior</span>
-                </button>
-
-                {/* Current Page Number Middle Display */}
-                <div 
-                  className="text-sm font-sans font-black text-brand-wine px-4 shrink-0 select-none" 
-                  id="desktop-current-page-num"
-                >
-                  {desktopPage}
-                </div>
-
-                {/* Next Page Button */}
-                <button
-                  onClick={() => {
-                    if (desktopPage < totalPagesDesktop) {
-                      setDesktopPage(prev => prev + 1);
-                      const el = document.getElementById('desktop-header-wrapper');
-                      if (el) {
-                        const y = el.getBoundingClientRect().top + window.scrollY - 40;
-                        window.scrollTo({ top: y, behavior: 'smooth' });
-                      } else {
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }
-                    }
-                  }}
-                  disabled={desktopPage === totalPagesDesktop}
-                  className={cn(
-                    "px-4 py-1.5 text-[11px] font-sans font-bold uppercase tracking-wider rounded-full transition-all flex items-center gap-1.5 focus:outline-none shrink-0",
-                    desktopPage === totalPagesDesktop 
-                      ? "text-neutral-300 pointer-events-none select-none" 
-                      : "text-brand-wine hover:text-brand-pink bg-brand-wine/5 hover:bg-brand-pink/10 cursor-pointer active:scale-95"
-                  )}
-                  id="btn-desktop-next-page"
-                >
-                  <span>Siguiente</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Pagination for MOBILE only, displaying 17 ads per page */}
-          {isMobile && totalPages > 1 && (
-            <div className="flex flex-col items-center justify-center gap-3 mt-10 md:hidden" id="mobile-pagination-controls">
-              <div className="flex items-center justify-between w-[270px] bg-white/95 border border-brand-pink/30 px-3 py-2 rounded-full shadow-[0_6px_20px_rgba(168,89,103,0.08)]">
-                <button
-                  onClick={() => {
-                    if (mobilePage > 1) {
-                      setMobilePage(prev => prev - 1);
-                      const el = document.getElementById('mobile-search-filter-row');
-                      if (el) {
-                        const y = el.getBoundingClientRect().top + window.scrollY - 90;
-                        window.scrollTo({ top: y, behavior: 'smooth' });
-                      }
-                    }
-                  }}
-                  disabled={mobilePage === 1}
-                  className={cn(
-                    "px-3 py-1.5 text-xs font-sans font-bold rounded-full transition-all flex items-center gap-1 focus:outline-none shrink-0",
-                    mobilePage === 1 
-                      ? "text-neutral-300 pointer-events-none select-none" 
-                      : "text-brand-wine bg-brand-wine/5 active:scale-95 hover:bg-brand-wine/10"
-                  )}
-                  id="btn-mobile-prev-page"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5 shrink-0" />
-                  <span>Ant.</span>
-                </button>
-
-                <div className="flex items-center justify-center font-sans text-xs font-black text-brand-wine shrink-0 select-none" id="mobile-current-page-num">
-                  <span>{mobilePage}</span>
-                </div>
-
-                <button
-                  onClick={() => {
-                    if (mobilePage < totalPages) {
-                      setMobilePage(prev => prev + 1);
-                      const el = document.getElementById('mobile-search-filter-row');
-                      if (el) {
-                        const y = el.getBoundingClientRect().top + window.scrollY - 90;
-                        window.scrollTo({ top: y, behavior: 'smooth' });
-                      }
-                    }
-                  }}
-                  disabled={mobilePage === totalPages}
-                  className={cn(
-                    "px-3 py-1.5 text-xs font-sans font-bold rounded-full transition-all flex items-center gap-1 focus:outline-none shrink-0",
-                    mobilePage === totalPages 
-                      ? "text-neutral-300 pointer-events-none select-none" 
-                      : "text-brand-wine bg-brand-wine/5 active:scale-95 hover:bg-brand-wine/10"
-                  )}
-                  id="btn-mobile-next-page"
-                >
-                  <span>Sig.</span>
-                  <ChevronRight className="w-3.5 h-3.5 shrink-0" />
-                </button>
-              </div>
-            </div>
+            <DirectoryCarousel
+              ads={announcements.filter(a => !a.isAlianza)}
+              totalDirectoryCount={announcements.filter(a => !a.isAlianza).length}
+              onViewFull={(selected) => setSelectedAdForModal(selected)}
+              onToggleFavorite={handleToggleFavorite}
+              isFavorite={isFavorite}
+              onNavigateToDirectory={() => navigateToView('directorio')}
+            />
           )}
 
           {/* Subtle separator line separating pagination from Scratch & Discover */}
@@ -3437,6 +2736,38 @@ export default function App() {
                 id="footer-menu-publicate"
               >
                 {t('footer.publicate')}
+              </a>
+              <span className="opacity-50 select-none text-[9px] sm:text-xs text-[#E85B81]">•</span>
+              <a
+                href="/outlet"
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    navigateToView('outlet');
+                  }
+                }}
+                className={`hover:text-[#DE4B73] transition-colors duration-200 cursor-pointer ${
+                  (currentView as string) === 'outlet' ? 'text-[#DE4B73] underline underline-offset-4' : 'text-[#E85B81]'
+                }`}
+                id="footer-menu-outlet"
+              >
+                Outlet
+              </a>
+              <span className="opacity-50 select-none text-[9px] sm:text-xs text-[#E85B81]">•</span>
+              <a
+                href="/directorio"
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    navigateToView('directorio');
+                  }
+                }}
+                className={`hover:text-[#DE4B73] transition-colors duration-200 cursor-pointer ${
+                  (currentView as string) === 'directorio' ? 'text-[#DE4B73] underline underline-offset-4' : 'text-[#E85B81]'
+                }`}
+                id="footer-menu-directorio"
+              >
+                {language === 'en' ? 'Directory' : 'Directorio'}
               </a>
               <span className="opacity-50 select-none text-[9px] sm:text-xs text-[#E85B81]">•</span>
               <a

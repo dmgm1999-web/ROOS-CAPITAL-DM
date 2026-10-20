@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { Announcement } from '../App';
 import { getOptimizedImageUrl } from '../utils/imageUtils';
+import { extractPromoPercentage } from '../utils/promoUtils';
+import { FormattedPrice } from '../utils/priceUtils';
 import { useLanguage } from '../context/LanguageContext';
 import { CountryFlag, getCountryInfo, translateCountryName } from '../utils/countryUtils';
 import { 
@@ -126,11 +128,19 @@ export default function AnnouncementModal({ ad, onClose }: AnnouncementModalProp
     { key: 'web', label: 'Sitio Web', icon: Globe, url: webUrl, color: 'hover:bg-brand-orange hover:text-white' },
   ].filter(s => Boolean(s.url && s.url.trim()));
 
-  const countryInfo = getCountryInfo(ad.extractedCountry || ad.pais, ad.extractedState || ad.estado, ad.extractedMunicipio || ad.municipio, language);
+  const countryInfo = getCountryInfo(
+    ad.extractedCountry || ad.pais, 
+    isAlianzaAd ? '' : (ad.extractedState || ad.estado), 
+    ad.extractedMunicipio || ad.municipio, 
+    language
+  );
+
+  const rawState = (ad.estado || '').toLowerCase().trim();
+  const rawExtractedState = (ad.extractedState || '').toLowerCase().trim();
 
   const locationParts = [
     ad.ciudad || ad.municipio, 
-    ad.estado, 
+    isAlianzaAd ? '' : ad.estado, 
     ad.pais ? translateCountryName(ad.pais, language) : ''
   ]
     .filter(Boolean)
@@ -138,6 +148,10 @@ export default function AnnouncementModal({ ad, onClose }: AnnouncementModalProp
     .map(part => translateCountryName(part, language))
     .filter(s => {
       const lower = s.toLowerCase();
+      if (isAlianzaAd) {
+        if (rawState && lower === rawState) return false;
+        if (rawExtractedState && lower === rawExtractedState) return false;
+      }
       return (
         lower !== 'si' && 
         lower !== 'sí' && 
@@ -258,24 +272,28 @@ export default function AnnouncementModal({ ad, onClose }: AnnouncementModalProp
                       {ad.descripcion.replace(/^#+/, '').trim()}
                     </p>
                   )}
-                  {(ad.precio || ad.promo) && (
-                    <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap mt-0.5 select-none">
-                      {ad.precio && ad.precio.trim() && (
-                        <span className="text-2xl sm:text-3xl font-black text-[#E85B81] font-sans tracking-tight">
-                          {ad.precio.trim()}
-                        </span>
-                      )}
-                      {ad.promo && ad.promo.trim() && (
-                        <div 
-                          className="px-3 py-1.5 rounded-lg bg-[#E85B81] text-white text-xs sm:text-sm font-bold tracking-wide shadow-xs select-none flex items-center gap-1.5 shrink-0"
-                          title={ad.promo.trim()}
-                        >
-                          <span className="text-xs">🏷️</span>
-                          <span>{ad.promo.trim()}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {(ad.precio || ad.promo) && (() => {
+                    const promoText = (ad.promo || '').trim();
+                    const priceRaw = (ad.precio || '').trim();
+                    return (
+                      <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap mt-0.5 select-none">
+                        {priceRaw && (
+                          <FormattedPrice 
+                            price={priceRaw}
+                            className="text-2xl sm:text-3xl font-black text-[#E85B81] font-sans tracking-tight"
+                          />
+                        )}
+                        {promoText && (
+                          <div 
+                            className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-[#E85B81] text-white text-xs sm:text-sm font-bold tracking-wide shadow-xs select-none flex items-center shrink-0"
+                            title={promoText}
+                          >
+                            <span>{promoText}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               ) : (
                 <>
@@ -296,7 +314,7 @@ export default function AnnouncementModal({ ad, onClose }: AnnouncementModalProp
                         <div
                           className="animate-ticker-marquee flex items-center gap-6 whitespace-nowrap"
                           style={{
-                            '--ticker-duration': `${Math.max(78, ad.promo.trim().length * 3.15)}s`,
+                            '--ticker-duration': `${Math.max(48, ad.promo.trim().length * 2.0)}s`,
                           } as React.CSSProperties}
                         >
                           {[ad.promo.trim(), ad.promo.trim(), ad.promo.trim(), ad.promo.trim()].map((promoItem, idx) => (
@@ -357,7 +375,7 @@ export default function AnnouncementModal({ ad, onClose }: AnnouncementModalProp
               </div>
               <h3 className="text-xl font-bold text-brand-wine mb-1">{ad.titulo}</h3>
               <p className="text-xs text-brand-wine/60 uppercase font-semibold tracking-wider mb-4">{translateCategory(ad.categoria)}</p>
-              {ad.descripcion && (
+              {ad.descripcion && !isAlianzaAd && (
                 <p className="text-sm italic text-neutral-700 bg-white p-4 rounded-2xl border border-brand-wine/10 shadow-xs">
                   "{ad.descripcion}"
                 </p>
@@ -365,8 +383,8 @@ export default function AnnouncementModal({ ad, onClose }: AnnouncementModalProp
             </div>
           )}
 
-          {/* Description banner if present below image */}
-          {optimizedImgUrl && !imgError && ad.descripcion && (
+          {/* Description banner if present below image (eliminated for Alianza ads as requested) */}
+          {optimizedImgUrl && !imgError && ad.descripcion && !isAlianzaAd && (
             <div className="mt-4 w-full max-w-2xl bg-white/90 backdrop-blur-sm border border-brand-wine/10 p-4 rounded-2xl shadow-xs text-center">
               <span className="block text-[9px] font-black uppercase tracking-widest text-brand-orange mb-1">
                 {t('modal.announcementInfo')}

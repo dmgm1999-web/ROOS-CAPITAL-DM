@@ -83,6 +83,25 @@ export function HeroSection({
               {t('nav.marketplace')}
             </button>
             <button
+              onClick={() => onNavigateToView('outlet')}
+              className={`hover:text-[#E85B81] transition-colors cursor-pointer flex items-center gap-1.5 ${
+                currentView === 'outlet' ? 'text-[#E85B81]' : ''
+              }`}
+            >
+              <span>Outlet</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-[#E85B81] text-white text-[9.5px] font-black uppercase tracking-wider shadow-2xs">
+                Sale
+              </span>
+            </button>
+            <button
+              onClick={() => onNavigateToView('directorio')}
+              className={`hover:text-[#E85B81] transition-colors cursor-pointer ${
+                currentView === 'directorio' ? 'text-[#E85B81]' : ''
+              }`}
+            >
+              {language === 'en' ? 'Directory' : 'Directorio'}
+            </button>
+            <button
               onClick={() => onNavigateToView('ugc_program')}
               className={`hover:text-[#E85B81] transition-colors cursor-pointer ${
                 currentView === 'ugc_program' ? 'text-[#E85B81]' : ''
@@ -97,22 +116,6 @@ export function HeroSection({
               }`}
             >
               {t('nav.forBrands')}
-            </button>
-            <button
-              onClick={() => onNavigateToView('somos_roos')}
-              className={`hover:text-[#E85B81] transition-colors cursor-pointer ${
-                currentView === 'somos_roos' ? 'text-[#E85B81]' : ''
-              }`}
-            >
-              {t('nav.community')}
-            </button>
-            <button
-              onClick={() => onNavigateToView('educacion')}
-              className={`hover:text-[#E85B81] transition-colors cursor-pointer ${
-                currentView === 'educacion' ? 'text-[#E85B81]' : ''
-              }`}
-            >
-              {t('nav.education')}
             </button>
           </nav>
 
@@ -192,6 +195,31 @@ export function HeroSection({
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
+                onNavigateToView('outlet');
+              }}
+              className={`text-left py-1 hover:text-[#E85B81] transition-colors flex items-center justify-between ${
+                currentView === 'outlet' ? 'text-[#E85B81]' : ''
+              }`}
+            >
+              <span>Outlet</span>
+              <span className="px-2 py-0.5 rounded-full bg-[#E85B81] text-white text-[10px] font-bold">
+                Ofertas
+              </span>
+            </button>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onNavigateToView('directorio');
+              }}
+              className={`text-left py-1 hover:text-[#E85B81] transition-colors ${
+                currentView === 'directorio' ? 'text-[#E85B81]' : ''
+              }`}
+            >
+              <span>{language === 'en' ? 'Directory' : 'Directorio'}</span>
+            </button>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
                 onNavigateToView('ugc_program');
               }}
               className="text-left py-1 hover:text-[#E85B81] transition-colors"
@@ -206,24 +234,6 @@ export function HeroSection({
               className="text-left py-1 hover:text-[#E85B81] transition-colors"
             >
               {t('nav.forBrands')}
-            </button>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onNavigateToView('somos_roos');
-              }}
-              className="text-left py-1 hover:text-[#E85B81] transition-colors"
-            >
-              {t('nav.community')}
-            </button>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onNavigateToView('educacion');
-              }}
-              className="text-left py-1 hover:text-[#E85B81] transition-colors"
-            >
-              {t('nav.education')}
             </button>
           </div>
         )}
