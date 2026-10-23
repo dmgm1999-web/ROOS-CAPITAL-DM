@@ -731,6 +731,11 @@ async function startServer() {
     }
   });
 
+  // Redirect legacy /outlet route to canonical /roosoutlet
+  app.get("/outlet", (req, res) => {
+    res.redirect(301, "/roosoutlet");
+  });
+
   interface ImageCacheEntry {
     buffer: Buffer;
     contentType: string;
@@ -897,6 +902,16 @@ async function startServer() {
       title: 'ROOS Capital | Nuestra Visión y Ecosistema de Negocios',
       description: 'Descubre nuestra visión estratégica para financiar, visibilizar y conectar a mujeres emprendedoras en Latinoamérica y el mundo.',
       canonical: 'https://rooscapital.com/roos-capital'
+    },
+    '/roosoutlet': {
+      title: 'ROOS Outlet | Ofertas Exclusivas & Anuncios Alianza - ROOS Capital',
+      description: 'El outlet de las plataformas líderes: tus marcas favoritas a precios de liquidación y ofertas exclusivas de anuncios alianza.',
+      canonical: 'https://rooscapital.com/roosoutlet'
+    },
+    '/outlet': {
+      title: 'ROOS Outlet | Ofertas Exclusivas & Anuncios Alianza - ROOS Capital',
+      description: 'El outlet de las plataformas líderes: tus marcas favoritas a precios de liquidación y ofertas exclusivas de anuncios alianza.',
+      canonical: 'https://rooscapital.com/roosoutlet'
     }
   };
 

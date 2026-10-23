@@ -428,6 +428,60 @@ async function fetchCsvWithFallback(apiEndpoint: string, directUrl: string): Pro
   return '';
 }
 
+/**
+ * Interleaves alliance ads so that no two consecutive cards share the same category,
+ * while strictly prioritizing the most recently registered listings from Google Sheets.
+ */
+function interleaveAlianzaAds(items: Announcement[]): Announcement[] {
+  if (items.length <= 2) return items;
+
+  const pool = [...items];
+  const result: Announcement[] = [];
+  let lastCat = '';
+  let secondLastCat = '';
+
+  const getNormCat = (ad: Announcement) => {
+    const raw = ad.categoria || 'General';
+    return getCanonicalCategory(raw).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  };
+
+  while (pool.length > 0) {
+    let bestIdx = -1;
+
+    // Level 1: Different from last 2 categories, taking highest priority (most recent) candidate
+    for (let i = 0; i < pool.length; i++) {
+      const c = getNormCat(pool[i]);
+      if (c !== lastCat && c !== secondLastCat) {
+        bestIdx = i;
+        break;
+      }
+    }
+
+    // Level 2: Different from immediate last category, taking highest priority candidate
+    if (bestIdx === -1) {
+      for (let i = 0; i < pool.length; i++) {
+        const c = getNormCat(pool[i]);
+        if (c !== lastCat) {
+          bestIdx = i;
+          break;
+        }
+      }
+    }
+
+    // Level 3: Fallback to highest priority available item
+    if (bestIdx === -1) {
+      bestIdx = 0;
+    }
+
+    const chosen = pool.splice(bestIdx, 1)[0];
+    result.push(chosen);
+    secondLastCat = lastCat;
+    lastCat = getNormCat(chosen);
+  }
+
+  return result;
+}
+
 function parseCSVAnuncios(csvText: string, isDiamonds: boolean = false): Announcement[] {
   try {
     const trimmed = (csvText || '').trim();
@@ -990,7 +1044,7 @@ export const VIEW_TO_PATH: Record<AppView, string> = {
   faq: '/faq',
   roos_capital: '/roos-capital',
   emprendedoras: '/emprendedoras',
-  outlet: '/outlet'
+  outlet: '/roosoutlet'
 };
 
 export const PAGE_TITLES: Record<AppView, string> = {
@@ -1005,7 +1059,7 @@ export const PAGE_TITLES: Record<AppView, string> = {
   faq: 'Preguntas Frecuentes (FAQ) | Centro de Ayuda - ROOS Capital',
   roos_capital: 'ROOS Capital | Nuestra Visión y Ecosistema de Negocios',
   emprendedoras: 'Emprendedoras | Directorio de Marcas de Mujeres - ROOS Capital',
-  outlet: 'Outlet | Ofertas Exclusivas & Anuncios Alianza - ROOS Capital'
+  outlet: 'ROOS Outlet | Ofertas Exclusivas & Anuncios Alianza - ROOS Capital'
 };
 
 export const PAGE_DESCRIPTIONS: Record<AppView, string> = {
@@ -1034,7 +1088,7 @@ export function getViewFromLocation(): AppView {
   const candidate = pathname || (sectionParam ? `/${sectionParam}` : '');
 
   if (candidate === '/directorio' || candidate === '/directory') return 'directorio';
-  if (candidate === '/outlet' || candidate === '/anuncios-alianza' || candidate === '/ofertas' || candidate === '/alianza' || candidate === '/alianzas') return 'outlet';
+  if (candidate === '/roosoutlet' || candidate === '/outlet' || candidate === '/anuncios-alianza' || candidate === '/ofertas' || candidate === '/alianza' || candidate === '/alianzas') return 'outlet';
   if (candidate === '/ugcprogram' || candidate === '/ugc-program' || candidate === '/ugc' || candidate === '/ugc_program') return 'ugc_program';
   if (candidate === '/somos-roos' || candidate === '/somosroos' || candidate === '/somos_roos') return 'somos_roos';
   if (candidate === '/publicate' || candidate === '/publicar') return 'publicate';
@@ -1325,6 +1379,15 @@ export default function App() {
     const desc = PAGE_DESCRIPTIONS[currentView] || PAGE_DESCRIPTIONS.main;
     const path = VIEW_TO_PATH[currentView] || '/';
     const canonical = `https://rooscapital.com${path === '/' ? '/' : path}`;
+
+    // Ensure clean canonical URL in browser address bar (e.g. /outlet or ?section=outlet -> /roosoutlet)
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
+      const cleanTargetPath = path.toLowerCase().replace(/\/+$/, '') || '/';
+      if (currentPath !== cleanTargetPath && (currentPath === '/outlet' || currentPath === '/anuncios-alianza' || currentPath === '/ofertas' || window.location.search.includes('outlet'))) {
+        window.history.replaceState({ view: currentView }, '', path);
+      }
+    }
 
     document.title = title;
 
@@ -1622,9 +1685,24 @@ export default function App() {
       // 3. Process Alianza Sheet ("anuncios alianza")
       let parsedDiamonds: Announcement[] = [];
       if (diamondsCsv && !diamondsCsv.trim().startsWith("<!DOCTYPE") && !diamondsCsv.includes("<html")) {
-        parsedDiamonds = parseCSVAnuncios(diamondsCsv, true);
-        if (parsedDiamonds.length > 0) {
-          parsedDiamonds = parsedDiamonds.map(ad => ({
+        const rawParsedDiamonds = parseCSVAnuncios(diamondsCsv, true);
+        if (rawParsedDiamonds.length > 0) {
+          // Filter to valid ads containing promotional image, logo, description, promo or price
+          const validAds = rawParsedDiamonds.filter(ad =>
+            Boolean(
+              (ad.anuncio && ad.anuncio.trim()) ||
+              (ad.imagen && ad.imagen.trim()) ||
+              (ad.logo && ad.logo.trim()) ||
+              (ad.descripcion && ad.descripcion.trim()) ||
+              (ad.promo && ad.promo.trim()) ||
+              (ad.precio && ad.precio.trim())
+            )
+          );
+
+          // Reverse array so that the latest listings added at the bottom of the Google Sheet appear first
+          const adsToOrder = (validAds.length > 0 ? validAds : rawParsedDiamonds).slice().reverse();
+
+          const mappedDiamonds = adsToOrder.map(ad => ({
             ...ad,
             isAlianza: true,
             hasAnuncioImage: Boolean(ad.hasAnuncioImage || (ad.anuncio && ad.anuncio.trim()))
@@ -1633,8 +1711,11 @@ export default function App() {
             const bImg = Boolean(b.hasAnuncioImage || (b.anuncio && b.anuncio.trim()));
             if (aImg && !bImg) return -1;
             if (!aImg && bImg) return 1;
-            return 0;
+            return 0; // Stable sort retains reverse sheet order (latest Google Sheet listings first)
           });
+
+          // Interleave alliance ads to prevent consecutive same-category items, while preserving recency priority
+          parsedDiamonds = interleaveAlianzaAds(mappedDiamonds);
           setDiamondsAnnouncements(parsedDiamonds);
           if (parsedDiamonds.length > 6) {
             try {
@@ -2739,7 +2820,7 @@ export default function App() {
               </a>
               <span className="opacity-50 select-none text-[9px] sm:text-xs text-[#E85B81]">•</span>
               <a
-                href="/outlet"
+                href="/roosoutlet"
                 onClick={(e) => {
                   if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
                     e.preventDefault();

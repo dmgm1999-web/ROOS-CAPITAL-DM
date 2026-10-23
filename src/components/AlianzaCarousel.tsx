@@ -21,8 +21,8 @@ export function AlianzaCarousel({
   onNavigateToOutlet
 }: AlianzaCarouselProps) {
   const { language } = useLanguage();
-  // Strictly take the first 8 alliance ads as requested
-  const allianceAds = ads.slice(0, 8);
+  // Display alliance ads featuring the latest Google Sheet listings first
+  const allianceAds = ads;
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -204,12 +204,12 @@ export function AlianzaCarousel({
           </div>
 
           {/* Indicator Dots */}
-          <div className="flex items-center justify-center gap-1.5 mt-3 pt-1">
+          <div className="flex items-center justify-center gap-1.5 mt-3 pt-1 max-w-xs sm:max-w-md mx-auto overflow-x-auto no-scrollbar py-0.5">
             {allianceAds.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setCurrentIndex(idx)}
-                className={`transition-all duration-300 rounded-full cursor-pointer focus:outline-none ${
+                className={`transition-all duration-300 rounded-full cursor-pointer focus:outline-none shrink-0 ${
                   currentIndex === idx 
                     ? 'w-6 h-2 bg-[#E85B81]' 
                     : 'w-2 h-2 bg-neutral-300 hover:bg-neutral-400'
