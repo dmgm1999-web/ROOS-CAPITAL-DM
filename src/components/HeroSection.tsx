@@ -109,14 +109,6 @@ export function HeroSection({
             >
               {t('nav.creators')}
             </button>
-            <button
-              onClick={() => onNavigateToView('publicate')}
-              className={`hover:text-[#E85B81] transition-colors cursor-pointer ${
-                currentView === 'publicate' ? 'text-[#E85B81]' : ''
-              }`}
-            >
-              {t('nav.forBrands')}
-            </button>
           </nav>
 
           {/* Right: Actions */}
@@ -226,15 +218,6 @@ export function HeroSection({
             >
               {t('nav.creators')} (UGC)
             </button>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onNavigateToView('publicate');
-              }}
-              className="text-left py-1 hover:text-[#E85B81] transition-colors"
-            >
-              {t('nav.forBrands')}
-            </button>
           </div>
         )}
       </header>
@@ -251,26 +234,26 @@ export function HeroSection({
           {/* Left Column: Editorial Typography & CTAs */}
           <div className="lg:col-span-5 flex flex-col items-start z-10">
             {/* Kicker */}
-            <span className="text-[#E85B81] font-bold text-xs sm:text-[13px] tracking-[0.16em] uppercase mb-4 sm:mb-6 font-sans leading-relaxed">
+            <span className="text-[#E85B81] font-bold text-base sm:text-lg tracking-normal mb-3 sm:mb-5 font-sans leading-relaxed block">
               {language === 'en' ? (
                 <>
-                  DISCOVER WHAT WOMEN ARE{' '}
-                  <span className="inline-block whitespace-nowrap">CREATING WORLDWIDE</span>
+                  Discover the power of a platform{' '}
+                  <span className="inline-block whitespace-nowrap">made by and for women</span>
                 </>
               ) : (
                 <>
-                  DESCUBRE LO QUE LAS MUJERES ESTAMOS<br className="hidden sm:inline" />{' '}
-                  <span className="inline-block whitespace-nowrap">CREANDO EN TODO EL MUNDO</span>
+                  Descubre el poder de una plataforma<br className="hidden sm:inline" />{' '}
+                  <span className="inline-block whitespace-nowrap">hecha por y para mujeres</span>
                 </>
               )}
             </span>
 
-            {/* Massive Serif Title + Centered Hand-Drawn Heart (Tilted Left & Centered to Discover, Connect, Grow) */}
+            {/* Massive Serif Title + Centered Hand-Drawn Heart (Tilted Left & Centered to Discover, Save, Travel) */}
             <div className="flex items-center justify-between lg:inline-flex lg:items-center relative w-full lg:w-auto mb-6 sm:mb-8">
-              <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-[76px] font-bold text-[#18181B] leading-[1.02] tracking-tight shrink-0">
-                {t('hero.titleLine1')}<br />
-                {t('hero.titleLine2')}<br />
-                <span>{t('hero.titleLine3')}</span>
+              <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-[76px] font-bold tracking-tight shrink-0 flex flex-col justify-start">
+                <span className="block leading-[1.08] text-[#18181B]">{t('hero.titleLine1')}</span>
+                <span className="block leading-[1.08] text-[#18181B]">{t('hero.titleLine2')}</span>
+                <span className="block leading-[1.08] text-[#F482A0]">{t('hero.titleLine3')}</span>
               </h1>
 
               {/* Hand-Drawn Crayon Heart: Inclinado a la izquierda (-15°) y centrado verticalmente a las 3 palabras */}
@@ -409,12 +392,12 @@ export function HeroSection({
                 <span className="font-serif font-bold text-xl sm:text-2xl text-[#18181B] leading-none">
                   {t('stats.businesses')}
                 </span>
-                <span className="text-xs sm:text-sm text-neutral-600 font-sans mt-1">
+                <span className="text-xs sm:text-sm text-neutral-600 font-sans mt-1 leading-snug max-w-[13rem]">
                   {t('stats.businessesLabel')}
                 </span>
               </div>
 
-              {/* Stat 2: Creators */}
+              {/* Stat 2: Creators / Promociones */}
               <div className="flex flex-col items-center text-center">
                 <div className="w-10 h-10 rounded-full bg-[#FCE8EF] flex items-center justify-center mb-2.5">
                   <Users className="w-5 h-5 text-[#E85B81]" />
@@ -422,12 +405,12 @@ export function HeroSection({
                 <span className="font-serif font-bold text-xl sm:text-2xl text-[#18181B] leading-none">
                   {t('stats.creators')}
                 </span>
-                <span className="text-xs sm:text-sm text-neutral-600 font-sans mt-1">
+                <span className="text-xs sm:text-sm text-neutral-600 font-sans mt-1 leading-snug max-w-[13rem]">
                   {t('stats.creatorsLabel')}
                 </span>
               </div>
 
-              {/* Stat 3: Countries */}
+              {/* Stat 3: Countries / Ofertas en Viajes y Hoteles */}
               <div className="flex flex-col items-center text-center">
                 <div className="w-10 h-10 rounded-full bg-[#FCE8EF] flex items-center justify-center mb-2.5">
                   <Globe className="w-5 h-5 text-[#E85B81]" />
@@ -435,7 +418,7 @@ export function HeroSection({
                 <span className="font-serif font-bold text-xl sm:text-2xl text-[#18181B] leading-none">
                   {t('stats.countries')}
                 </span>
-                <span className="text-xs sm:text-sm text-neutral-600 font-sans mt-1">
+                <span className="text-xs sm:text-sm text-neutral-600 font-sans mt-1 leading-snug max-w-[13rem]">
                   {t('stats.countriesLabel')}
                 </span>
               </div>

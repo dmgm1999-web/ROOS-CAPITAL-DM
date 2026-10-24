@@ -165,7 +165,7 @@ async function startServer() {
     timestamp: number;
   }
   const memoryCache = new Map<string, CacheEntry>();
-  const CACHE_TTL_MS = 60000; // 60 seconds cache duration for fresh data
+  const CACHE_TTL_MS = 30000; // 30 seconds cache duration for fresh data
 
   // Config sheet ("elementos") containing country documents in column DIRECTORIO and country codes in CSV PAIS
   const configUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyC2jBz4JtAra4VtCNQSbCyDf28VB7Her9WpYdfuOS1eTBY9lY5ygYT9wDHUIbG4PvGlYEgDvpu6OT/pub?gid=859336638&single=true&output=csv';
@@ -373,23 +373,23 @@ async function startServer() {
   // Multi-country directory aggregation engine
   let isAggregatingDirectory = false;
 
-  async function getUnifiedDirectoryData(): Promise<string> {
-    // Check memory cache first
-    const cached = memoryCache.get(directoryCacheKey);
-    const now = Date.now();
-    if (cached && cached.data && (now - cached.timestamp < CACHE_TTL_MS)) {
-      return cached.data;
-    }
+  async function getUnifiedDirectoryData(forceRefresh: boolean = false): Promise<string> {
+    if (!forceRefresh) {
+      const cached = memoryCache.get(directoryCacheKey);
+      const now = Date.now();
+      if (cached && cached.data && (now - cached.timestamp < CACHE_TTL_MS)) {
+        return cached.data;
+      }
 
-    // If disk cache exists, use it and trigger background refresh
-    const diskFallback = getDiskOrMemoryFallback(directoryCacheKey);
-    if (diskFallback && !isAggregatingDirectory) {
-      refreshAllCountrySheets().catch(() => {});
-      return diskFallback;
-    }
+      const diskFallback = getDiskOrMemoryFallback(directoryCacheKey);
+      if (diskFallback && !isAggregatingDirectory) {
+        refreshAllCountrySheets().catch(() => {});
+        return diskFallback;
+      }
 
-    if (isAggregatingDirectory && diskFallback) {
-      return diskFallback;
+      if (isAggregatingDirectory && diskFallback) {
+        return diskFallback;
+      }
     }
 
     return await refreshAllCountrySheets();
@@ -426,15 +426,20 @@ async function startServer() {
 
       let rowCount = 0;
 
-      // Fetch each country's "ROOS DISCOVERY" (gid=0) and "ROOS VERIFIED" (gid=794118874)
-      for (const country of countries) {
+      // Group country rows: Map<countryKey, string[]>
+      const countryBuckets: Map<string, string[]> = new Map();
+
+      // Fetch each country's "ROOS DISCOVERY" (gid=0) and "ROOS VERIFIED" (gid=794118874) concurrently
+      await Promise.allSettled(countries.map(async (country) => {
+        const countryRows: string[] = [];
         const sheetConfigs = [
-          { type: 'discovery', gid: '0' },
-          { type: 'verified', gid: '794118874' }
+          { type: 'verified', gid: '794118874' },
+          { type: 'discovery', gid: '0' }
         ];
 
         for (const sc of sheetConfigs) {
-          const csvUrl = `${country.baseUrl}/pub?gid=${sc.gid}&single=true&output=csv`;
+          const now = Date.now();
+          const csvUrl = `${country.baseUrl}/pub?gid=${sc.gid}&single=true&output=csv&_t=${now}&_cb=${now}`;
           const filePath = path.join(countrySheetsDir, `${country.countryCode}_${sc.type}.csv`);
           let sheetCsv = '';
 
@@ -443,18 +448,25 @@ async function startServer() {
             const tid = setTimeout(() => controller.abort(), 12000);
             const resp = await fetch(csvUrl, {
               signal: controller.signal,
-              headers: { 'Accept': 'text/csv, text/plain, */*' }
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)',
+                'Accept': 'text/csv, text/plain, */*',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
+              }
             });
             clearTimeout(tid);
             if (resp.ok) {
               const text = await resp.text();
-              if (text && text.length > 50 && !text.startsWith('<!DOCTYPE')) {
+              if (text && text.length > 50 && !text.startsWith('<!DOCTYPE') && !text.includes('<html')) {
                 sheetCsv = text;
-                fs.writeFileSync(filePath, text, 'utf-8');
+                try {
+                  fs.writeFileSync(filePath, text, 'utf-8');
+                } catch (e) {}
               }
             }
           } catch (e) {
-            // fallback to disk file if available
+            // fallback to disk file only if network fails
             if (fs.existsSync(filePath)) {
               sheetCsv = fs.readFileSync(filePath, 'utf-8');
             }
@@ -506,16 +518,16 @@ async function startServer() {
           const kakaoIdx = headers.findIndex(h => h.includes('kakao'));
           const webIdx = headers.findIndex(h => h.includes('sitio') || h.includes('web') || h.includes('pagina'));
 
-          for (let r = hIdx + 1; r < lines.length; r++) {
+          // Iterate in reverse (bottom to top) to prioritize the latest rows added in Google Sheets
+          for (let r = lines.length - 1; r > hIdx; r--) {
             const line = lines[r];
             if (!line || !line.trim()) continue;
             const cols = parseCsvLine(line);
             const emp = cols[empIdx]?.trim();
             if (!emp || emp.length < 2 || /^\d+$/.test(emp) || emp.toLowerCase() === 'nombre de la empresa' || emp.startsWith('http') || emp.startsWith('+') || emp.startsWith('@')) continue;
 
-            rowCount++;
             const row = [
-              rowCount,
+              0, // Row index placeholder, will be numbered after interleaving
               escapeCsvCell(cols[onlineIdx] || 'También Online'),
               escapeCsvCell(cols[intIdx] || 'SI'),
               escapeCsvCell(cols[provIdx] || 'NO'),
@@ -524,7 +536,7 @@ async function startServer() {
               escapeCsvCell(cols[munIdx] || ''),
               escapeCsvCell(cols[logoIdx] || ''),
               escapeCsvCell(cols[catIdx] || 'General'),
-              escapeCsvCell(cols[idIdx] || `${country.countryCode}_${rowCount}`),
+              escapeCsvCell(cols[idIdx] || `${country.countryCode}_${countryRows.length + 1}`),
               escapeCsvCell(emp),
               escapeCsvCell(cols[hashIdx] || ''),
               escapeCsvCell(cols[promoIdx] || ''),
@@ -542,114 +554,34 @@ async function startServer() {
               escapeCsvCell(webIdx !== -1 ? cols[webIdx] : ''),
               sc.type === 'verified' ? 'Verified' : ''
             ];
-            combinedRows.push(row.join(','));
+            countryRows.push(row.join(','));
           }
         }
-      }
 
-      // Also append rows from "anuncios alianza" (formerly "anuncios del mes") into the unified directory
-      try {
-        const alianzaCsv = await fetchWithCache(alianzaSheetUrl);
-        if (alianzaCsv && alianzaCsv.length > 50 && !alianzaCsv.trim().startsWith("<!DOCTYPE")) {
-          const aLines = alianzaCsv.split('\n');
-          let aHIdx = -1;
-          for (let r = 0; r < Math.min(aLines.length, 10); r++) {
-            const lower = (aLines[r] || '').toLowerCase();
-            if (lower.includes('empresa') || lower.includes('marca') || lower.includes('nombre')) {
-              aHIdx = r;
-              break;
-            }
-          }
-          if (aHIdx !== -1) {
-            const aHeaders = parseCsvLine(aLines[aHIdx]).map(h => (h || '').toLowerCase().trim());
-            const aEmpIdx = aHeaders.findIndex(h => h.includes('empresa') || h.includes('marca') || h.includes('nombre'));
-            if (aEmpIdx !== -1) {
-              const aOnlineIdx = aHeaders.findIndex(h => h.includes('online'));
-              const aIntIdx = aHeaders.findIndex(h => h.includes('internacional'));
-              const aProvIdx = aHeaders.findIndex(h => h.includes('proveedor'));
-              const aPaisIdx = aHeaders.findIndex(h => h.includes('pais') || h.includes('país'));
-              const aEstadoIdx = aHeaders.findIndex(h => h.includes('estado'));
-              const aMunIdx = aHeaders.findIndex(h => h.includes('municipio') || h.includes('ciudad'));
-              const aLogoIdx = aHeaders.findIndex(h => h === 'logo' || (h.includes('logo') && !h.includes('anuncio')));
-              const aAnuncioIdx = aHeaders.findIndex(h => h === 'anuncio' || h.includes('anuncio') || h.includes('imagen') || h.includes('foto') || h.includes('banner'));
-              const aCatIdx = aHeaders.findIndex(h => h.includes('categoria') || h.includes('rubro'));
-              const aIdIdx = aHeaders.findIndex(h => h === 'id' || h.includes('id'));
-              const aHashIdx = aHeaders.findIndex(h => h.includes('hashtag') || h.includes('descripcion') || h.includes('descripción'));
-              const aPromoIdx = aHeaders.findIndex(h => h.includes('promo'));
-              const aPrecioIdx = aHeaders.findIndex(h => h.includes('precio') || h.includes('costo') || h.includes('price'));
-              const aWspIdx = aHeaders.findIndex(h => (h.includes('whatsapp') || h.includes('telefono')) && !h.includes('wechat'));
-              const aFbIdx = aHeaders.findIndex(h => h.includes('facebook') || h === 'fb');
-              const aIgIdx = aHeaders.findIndex(h => h.includes('instagram') || h === 'ig');
-              const aTkIdx = aHeaders.findIndex(h => h.includes('tiktok') || h === 'tk');
-              const aTwIdx = aHeaders.findIndex(h => h === 'x' || h === 'twitter' || h.includes('twitter'));
-              const aWebIdx = aHeaders.findIndex(h => h.includes('sitio') || h.includes('web') || h.includes('pagina'));
+        if (countryRows.length > 0) {
+          countryBuckets.set(country.countryName || country.countryCode, countryRows);
+        }
+      }));
 
-              const priorityAlianzaRows: string[] = [];
-              const regularAlianzaRows: string[] = [];
+      // Deterministic country sequence to guarantee stability and prevent directory flickering
+      const countryKeys = Array.from(countryBuckets.keys()).sort((a, b) => a.localeCompare(b));
 
-              for (let r = aHIdx + 1; r < aLines.length; r++) {
-                const line = aLines[r];
-                if (!line || !line.trim()) continue;
-                const cols = parseCsvLine(line);
-                const emp = cols[aEmpIdx]?.trim();
-                if (!emp || emp.length < 2 || /^\d+$/.test(emp) || emp.toLowerCase() === 'nombre de la empresa' || emp.startsWith('http') || emp.startsWith('+') || emp.startsWith('@')) continue;
-
-                rowCount++;
-                const anuncioVal = (aAnuncioIdx !== -1 ? cols[aAnuncioIdx] : '').trim();
-                const logoVal = (aLogoIdx !== -1 ? cols[aLogoIdx] : '').trim();
-                const hasAnuncioImg = Boolean(
-                  anuncioVal && (
-                    anuncioVal.startsWith('http') ||
-                    anuncioVal.startsWith('//') ||
-                    anuncioVal.includes('drive.google.com') ||
-                    anuncioVal.includes('dropbox.com') ||
-                    anuncioVal.includes('raw.githubusercontent.com')
-                  ) && !anuncioVal.includes('wa.me') && !anuncioVal.includes('whatsapp') && !anuncioVal.includes('facebook')
-                );
-
-                const row = [
-                  rowCount,
-                  escapeCsvCell((aOnlineIdx !== -1 ? cols[aOnlineIdx] : '') || 'También Online'),
-                  escapeCsvCell((aIntIdx !== -1 ? cols[aIntIdx] : '') || 'SI'),
-                  escapeCsvCell((aProvIdx !== -1 ? cols[aProvIdx] : '') || 'SI'),
-                  escapeCsvCell((aPaisIdx !== -1 ? cols[aPaisIdx] : '') || 'México'),
-                  escapeCsvCell(aEstadoIdx !== -1 ? cols[aEstadoIdx] : ''),
-                  escapeCsvCell(aMunIdx !== -1 ? cols[aMunIdx] : ''),
-                  escapeCsvCell(anuncioVal || logoVal || ''),
-                  escapeCsvCell((aCatIdx !== -1 ? cols[aCatIdx] : '') || 'General'),
-                  escapeCsvCell((aIdIdx !== -1 ? cols[aIdIdx] : '') || `ALIANZA_${rowCount}`),
-                  escapeCsvCell(emp),
-                  escapeCsvCell(aHashIdx !== -1 ? cols[aHashIdx] : ''),
-                  escapeCsvCell(aPromoIdx !== -1 ? cols[aPromoIdx] : ''),
-                  escapeCsvCell(aWspIdx !== -1 ? cols[aWspIdx] : ''),
-                  escapeCsvCell(aFbIdx !== -1 ? cols[aFbIdx] : ''),
-                  escapeCsvCell(aIgIdx !== -1 ? cols[aIgIdx] : ''),
-                  escapeCsvCell(aTkIdx !== -1 ? cols[aTkIdx] : ''),
-                  escapeCsvCell(aTwIdx !== -1 ? cols[aTwIdx] : ''),
-                  '', '', '', '', '', '', // other socials
-                  escapeCsvCell(aWebIdx !== -1 ? cols[aWebIdx] : ''),
-                  'Alianza'
-                ];
-
-                if (hasAnuncioImg) {
-                  priorityAlianzaRows.push(row.join(','));
-                } else {
-                  regularAlianzaRows.push(row.join(','));
-                }
-              }
-
-              // Append alianza rows into the unified directory
-              if (priorityAlianzaRows.length > 0) {
-                combinedRows.push(...priorityAlianzaRows);
-              }
-              if (regularAlianzaRows.length > 0) {
-                combinedRows.push(...regularAlianzaRows);
-              }
-            }
+      // Round-robin interleaving: cycle through each country, taking 1 ad per round (newest rows first)
+      let addedAny = true;
+      let roundIdx = 0;
+      while (addedAny) {
+        addedAny = false;
+        for (const cKey of countryKeys) {
+          const list = countryBuckets.get(cKey)!;
+          if (roundIdx < list.length) {
+            rowCount++;
+            const parts = list[roundIdx].split(',');
+            parts[0] = String(rowCount);
+            combinedRows.push(parts.join(','));
+            addedAny = true;
           }
         }
-      } catch (err: any) {
-        console.warn('[server] Notice parsing alianza sheet into unified directory:', err?.message || err);
+        roundIdx++;
       }
 
       if (rowCount > 10) {
@@ -686,9 +618,52 @@ async function startServer() {
   // Run priming on startup
   primeCacheOnStartup().catch(() => {});
 
+  // Exchange rate caching system for live USD/MXN rate
+  let exchangeRateCache: { rate: number; timestamp: number } | null = null;
+  const EXCHANGE_RATE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+  app.get("/api/exchange-rate", async (req, res) => {
+    const now = Date.now();
+    if (exchangeRateCache && (now - exchangeRateCache.timestamp < EXCHANGE_RATE_TTL_MS)) {
+      res.setHeader("Cache-Control", "public, max-age=3600");
+      return res.json({ rate: exchangeRateCache.rate, base: "USD", target: "MXN", source: "cache" });
+    }
+
+    try {
+      const controller = new AbortController();
+      const tid = setTimeout(() => controller.abort(), 8000);
+      const resp = await fetch("https://open.er-api.com/v6/latest/USD", {
+        signal: controller.signal,
+        headers: { 'Accept': 'application/json' }
+      });
+      clearTimeout(tid);
+
+      if (resp.ok) {
+        const json = await resp.json();
+        const mxnRate = json?.rates?.MXN;
+        if (typeof mxnRate === 'number' && mxnRate > 0) {
+          exchangeRateCache = { rate: mxnRate, timestamp: now };
+          res.setHeader("Cache-Control", "public, max-age=3600");
+          return res.json({ rate: mxnRate, base: "USD", target: "MXN", source: "live" });
+        }
+      }
+    } catch (err: any) {
+      console.warn("[server] Exchange rate fetch error, using fallback:", err?.message || err);
+    }
+
+    // Default current rate ~ 18.73 MXN per USD
+    const fallbackRate = exchangeRateCache?.rate || 18.73;
+    res.setHeader("Cache-Control", "public, max-age=1800");
+    return res.json({ rate: fallbackRate, base: "USD", target: "MXN", source: "fallback" });
+  });
+
   // Proxy route for the multi-country Google Sheets CSV (combining "roos discovery" and "roos verified" per country)
   app.get("/api/sheet-data", async (req, res) => {
-    const csvData = await getUnifiedDirectoryData();
+    const force = req.query.refresh === '1' || req.query.force === 'true';
+    if (force) {
+      memoryCache.delete(directoryCacheKey);
+    }
+    const csvData = await getUnifiedDirectoryData(force);
     
     res.set("Cache-Control", "no-store, no-cache, must-revalidate, private, max-age=0");
     res.set("Pragma", "no-cache");
@@ -727,6 +702,56 @@ async function startServer() {
     if (csvData) {
       res.send(csvData);
     } else {
+      res.status(502).send("");
+    }
+  });
+
+  const FALLBACK_P5_OUTLET_BANNERS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQLlSffly1PqvNBGZxo9rqEa-W8v2-dXqZ7waoAVZRbRSgLWaIPQNbYfSah1cvi8tlPoxnypO6VBC8l/pub?output=csv";
+  const FALLBACK_P6_OUTLET_BRANDS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQZEBFs8mlYmtm2l3MLTdhs1LlCBmZCrRXAlT843yaRFDImhkq9tbXexZobYGwKT27meKbGqtcL_QfK/pub?output=csv";
+
+  function getOutletSheetUrlsFromConfig(configCsv: string) {
+    let p5Url = FALLBACK_P5_OUTLET_BANNERS_URL;
+    let p6Url = FALLBACK_P6_OUTLET_BRANDS_URL;
+    try {
+      const lines = configCsv.split('\n');
+      if (lines.length >= 6) {
+        // Line index 4 corresponds to row 5 (P5), Line index 5 corresponds to row 6 (P6)
+        const row5 = parseCsvLine(lines[4] || '');
+        const row6 = parseCsvLine(lines[5] || '');
+        // Col P is index 15
+        const val5 = (row5[15] || '').trim();
+        const val6 = (row6[15] || '').trim();
+        if (val5.startsWith('http')) p5Url = val5;
+        if (val6.startsWith('http')) p6Url = val6;
+      }
+    } catch (e) {}
+    return { p5Url, p6Url };
+  }
+
+  app.get("/api/outlet-banners", async (req, res) => {
+    try {
+      const configCsv = await fetchWithCache(configUrl);
+      const { p5Url } = getOutletSheetUrlsFromConfig(configCsv);
+      const csvData = await fetchWithCache(p5Url);
+      res.set("Cache-Control", "no-store, no-cache, must-revalidate, private, max-age=0");
+      res.set("Pragma", "no-cache");
+      res.header("Content-Type", "text/csv; charset=utf-8");
+      res.send(csvData || "");
+    } catch (err) {
+      res.status(502).send("");
+    }
+  });
+
+  app.get("/api/outlet-brands", async (req, res) => {
+    try {
+      const configCsv = await fetchWithCache(configUrl);
+      const { p6Url } = getOutletSheetUrlsFromConfig(configCsv);
+      const csvData = await fetchWithCache(p6Url);
+      res.set("Cache-Control", "no-store, no-cache, must-revalidate, private, max-age=0");
+      res.set("Pragma", "no-cache");
+      res.header("Content-Type", "text/csv; charset=utf-8");
+      res.send(csvData || "");
+    } catch (err) {
       res.status(502).send("");
     }
   });
@@ -854,8 +879,8 @@ async function startServer() {
   // SEO Route Definitions for Server-Side Meta & Canonical Tag Injection
   const SEO_ROUTES: Record<string, { title: string; description: string; canonical: string }> = {
     '/': {
-      title: 'ROOS Capital | Directorio de Emprendimiento Femenino',
-      description: 'Directorio internacional y marketplace oficial de empresas y emprendimientos liderados por mujeres. Descubre marcas, programas UGC y socias exclusivas.',
+      title: 'ROOS Capital | Directorio de Emprendimiento Femenino & Outlet Oficial',
+      description: 'Directorio internacional, marketplace y Outlet oficial de emprendimiento femenino. Descubre marcas exclusivas, ofertas de outlet, precios de liquidación y programas UGC.',
       canonical: 'https://rooscapital.com/'
     },
     '/ugcprogram': {
@@ -904,13 +929,13 @@ async function startServer() {
       canonical: 'https://rooscapital.com/roos-capital'
     },
     '/roosoutlet': {
-      title: 'ROOS Outlet | Ofertas Exclusivas & Anuncios Alianza - ROOS Capital',
-      description: 'El outlet de las plataformas líderes: tus marcas favoritas a precios de liquidación y ofertas exclusivas de anuncios alianza.',
+      title: 'ROOS Outlet Oficial | Ofertas, Liquidaciones y Marcas Aliadas - ROOS Capital',
+      description: 'El outlet oficial de ROOS Capital: encuentra marcas líderes con ofertas exclusivas, precios de liquidación, promociones de anuncios alianza y compras directas online.',
       canonical: 'https://rooscapital.com/roosoutlet'
     },
     '/outlet': {
-      title: 'ROOS Outlet | Ofertas Exclusivas & Anuncios Alianza - ROOS Capital',
-      description: 'El outlet de las plataformas líderes: tus marcas favoritas a precios de liquidación y ofertas exclusivas de anuncios alianza.',
+      title: 'ROOS Outlet Oficial | Ofertas, Liquidaciones y Marcas Aliadas - ROOS Capital',
+      description: 'El outlet oficial de ROOS Capital: encuentra marcas líderes con ofertas exclusivas, precios de liquidación, promociones de anuncios alianza y compras directas online.',
       canonical: 'https://rooscapital.com/roosoutlet'
     }
   };
@@ -966,16 +991,17 @@ async function startServer() {
     }
     res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://rooscapital.com/</loc><lastmod>2026-10-11</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>
-  <url><loc>https://rooscapital.com/ugcprogram</loc><lastmod>2026-10-11</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://rooscapital.com/somos-roos</loc><lastmod>2026-10-11</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://rooscapital.com/publicate</loc><lastmod>2026-10-11</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://rooscapital.com/embajadoras</loc><lastmod>2026-10-11</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://rooscapital.com/educacion</loc><lastmod>2026-10-11</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://rooscapital.com/diamonds</loc><lastmod>2026-10-11</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://rooscapital.com/emprendedoras</loc><lastmod>2026-10-11</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://rooscapital.com/roos-capital</loc><lastmod>2026-10-11</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://rooscapital.com/faq</loc><lastmod>2026-10-11</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rooscapital.com/</loc><lastmod>2026-10-22</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://rooscapital.com/roosoutlet</loc><lastmod>2026-10-22</lastmod><changefreq>daily</changefreq><priority>0.95</priority></url>
+  <url><loc>https://rooscapital.com/ugcprogram</loc><lastmod>2026-10-22</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://rooscapital.com/somos-roos</loc><lastmod>2026-10-22</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://rooscapital.com/publicate</loc><lastmod>2026-10-22</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://rooscapital.com/embajadoras</loc><lastmod>2026-10-22</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://rooscapital.com/educacion</loc><lastmod>2026-10-22</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://rooscapital.com/diamonds</loc><lastmod>2026-10-22</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://rooscapital.com/emprendedoras</loc><lastmod>2026-10-22</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://rooscapital.com/roos-capital</loc><lastmod>2026-10-22</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://rooscapital.com/faq</loc><lastmod>2026-10-22</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
 </urlset>`);
   });
 

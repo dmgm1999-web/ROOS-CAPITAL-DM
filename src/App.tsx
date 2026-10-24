@@ -375,43 +375,21 @@ function getMexicoStateAndMunicipio(direccion: string): { state: string; municip
   };
 }
 
-const DIRECT_PRIMARY_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyC2jBz4JtAra4VtCNQSbCyDf28VB7Her9WpYdfuOS1eTBY9lY5ygYT9wDHUIbG4PvGlYEgDvpu6OT/pub?gid=0&single=true&output=csv';
+const DIRECT_PRIMARY_SHEET_URL = '';
 // "anuncios alianza" (formerly "anuncios del mes" / diamonds) - published under gid=0
 const DIRECT_DIAMONDS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyC2jBz4JtAra4VtCNQSbCyDf28VB7Her9WpYdfuOS1eTBY9lY5ygYT9wDHUIbG4PvGlYEgDvpu6OT/pub?gid=0&single=true&output=csv';
 const DIRECT_CONFIG_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyC2jBz4JtAra4VtCNQSbCyDf28VB7Her9WpYdfuOS1eTBY9lY5ygYT9wDHUIbG4PvGlYEgDvpu6OT/pub?gid=859336638&single=true&output=csv';
 
 async function fetchCsvWithFallback(apiEndpoint: string, directUrl: string): Promise<string> {
   const cacheBuster = Date.now();
-  const directFullUrl = `${directUrl}&_t=${cacheBuster}&_cb=${cacheBuster}`;
 
-  // 1. Try local Express API route first (fastest, served from in-memory cache primed with live data)
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 10000);
-    const res = await fetch(`${apiEndpoint}?_t=${cacheBuster}`, {
-      signal: controller.signal,
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache'
-      }
-    });
-    clearTimeout(timer);
-    if (res.ok) {
-      const text = await res.text();
-      if (text && !text.trim().startsWith('<!DOCTYPE') && !text.includes('<html') && text.length > 50) {
-        return text;
-      }
-    }
-  } catch (e) {}
-
-  // 2. Direct fetch fallback to Google Sheets with 12s timeout
+  // 1. Try local Express API route first (served from in-memory multi-country directory cache)
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 12000);
-    const res = await fetch(directFullUrl, {
+    const res = await fetch(`${apiEndpoint}?_t=${cacheBuster}&_cb=${cacheBuster}`, {
       signal: controller.signal,
       headers: {
-        'Accept': 'text/csv, text/plain, */*',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache'
       }
@@ -424,6 +402,30 @@ async function fetchCsvWithFallback(apiEndpoint: string, directUrl: string): Pro
       }
     }
   } catch (e) {}
+
+  // 2. Direct fetch fallback only if a valid external URL is provided
+  if (directUrl && directUrl.startsWith('http')) {
+    try {
+      const directFullUrl = `${directUrl}${directUrl.includes('?') ? '&' : '?'}_t=${cacheBuster}&_cb=${cacheBuster}`;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 12000);
+      const res = await fetch(directFullUrl, {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'text/csv, text/plain, */*',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
+      clearTimeout(timer);
+      if (res.ok) {
+        const text = await res.text();
+        if (text && !text.trim().startsWith('<!DOCTYPE') && !text.includes('<html') && text.length > 50) {
+          return text;
+        }
+      }
+    } catch (e) {}
+  }
 
   return '';
 }
@@ -752,11 +754,18 @@ function parseCSVAnuncios(csvText: string, isDiamonds: boolean = false): Announc
         const keywordsVal = normalizedRow.palabras_clave || normalizedRow.keywords || normalizedRow.tags || '';
 
         const descVal = (() => {
-          const desc = normalizedRow.descripcion || 
+          const rawDesc = (normalizedRow.descripcion || 
             normalizedRow.proposito || 
             normalizedRow.prop_sito || 
-            (imagen.startsWith('http') ? '' : (normalizedRow.anuncio || ''));
-          return desc.includes('Haz clic abajo para contactar') ? '' : desc;
+            '').trim();
+          if (rawDesc && !isLikelyImageUrl(rawDesc) && !rawDesc.startsWith('http') && !rawDesc.startsWith('//') && !rawDesc.includes('drive.google.com') && !rawDesc.includes('Haz clic abajo para contactar')) {
+            return rawDesc;
+          }
+          const rawAnuncio = (normalizedRow.anuncio || '').trim();
+          if (rawAnuncio && !isLikelyImageUrl(rawAnuncio) && !rawAnuncio.startsWith('http') && !rawAnuncio.startsWith('//') && !rawAnuncio.includes('drive.google.com') && !rawAnuncio.includes('Haz clic abajo para contactar')) {
+            return rawAnuncio;
+          }
+          return '';
         })();
 
         const estadoVal = normalizedRow.estado || normalizedRow.state || '';
@@ -1106,15 +1115,12 @@ export default function App() {
   const { language, setLanguage, t, translateCategory } = useLanguage();
   const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
     try {
-      const cached = localStorage.getItem('roos_announcements_cache');
+      localStorage.removeItem('roos_announcements_cache');
+      localStorage.removeItem('roos_announcements_cache_v2');
+      const cached = localStorage.getItem('roos_dir_cache_v4');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Detect and purge old mock or tiny data
-          if (parsed.length <= 6 || parsed.some((a: any) => a.titulo === 'Ellas Boutique' && (!a.socio && !a.pais && !a.whatsapp))) {
-            localStorage.removeItem('roos_announcements_cache');
-            return [];
-          }
           return parsed;
         }
       }
@@ -1123,15 +1129,12 @@ export default function App() {
   });
   const [diamondsAnnouncements, setDiamondsAnnouncements] = useState<Announcement[]>(() => {
     try {
-      const cached = localStorage.getItem('roos_fundadoras_cache');
+      localStorage.removeItem('roos_fundadoras_cache');
+      localStorage.removeItem('roos_fundadoras_cache_v2');
+      const cached = localStorage.getItem('roos_outlet_cache_v4');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Detect and purge old mock data
-          if (parsed.length <= 6 && parsed.some((a: any) => a.titulo === 'Ellas Boutique' && !a.id)) {
-            localStorage.removeItem('roos_fundadoras_cache');
-            return [];
-          }
           return parsed;
         }
       }
@@ -1140,7 +1143,7 @@ export default function App() {
   });
   const [loading, setLoading] = useState<boolean>(() => {
     try {
-      const cached = localStorage.getItem('roos_announcements_cache');
+      const cached = localStorage.getItem('roos_dir_cache_v4');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 6) return false;
@@ -1716,69 +1719,41 @@ export default function App() {
 
           // Interleave alliance ads to prevent consecutive same-category items, while preserving recency priority
           parsedDiamonds = interleaveAlianzaAds(mappedDiamonds);
-          setDiamondsAnnouncements(parsedDiamonds);
+          setDiamondsAnnouncements(prev => {
+            if (prev.length === parsedDiamonds.length && prev.every((p, idx) => p.id === parsedDiamonds[idx]?.id && p.titulo === parsedDiamonds[idx]?.titulo && p.imagen === parsedDiamonds[idx]?.imagen && p.precio === parsedDiamonds[idx]?.precio && p.promo === parsedDiamonds[idx]?.promo)) {
+              return prev;
+            }
+            return parsedDiamonds;
+          });
           if (parsedDiamonds.length > 6) {
             try {
-              localStorage.setItem('roos_fundadoras_cache', JSON.stringify(parsedDiamonds));
+              localStorage.setItem('roos_outlet_cache_v4', JSON.stringify(parsedDiamonds));
             } catch (e) {}
           }
         }
       }
 
-      // Merge both directory announcements and anuncios alianza (tagging isAlianza on alianza items)
-      const mergedMap = new Map<string, Announcement>();
-
-      parsedAnnouncements.forEach(ad => {
-        const idKey = ad.id ? `id_${ad.id.trim().toLowerCase()}` : '';
-        const titleKey = `${(ad.titulo || '').trim().toLowerCase()}_${(ad.pais || '').trim().toLowerCase()}`;
-        if (idKey) mergedMap.set(idKey, ad);
-        if (titleKey) mergedMap.set(titleKey, ad);
-      });
-
-      parsedDiamonds.forEach(ad => {
-        const idKey = ad.id ? `id_${ad.id.trim().toLowerCase()}` : '';
-        const titleKey = `${(ad.titulo || '').trim().toLowerCase()}_${(ad.pais || '').trim().toLowerCase()}`;
-        
-        const existing = (idKey && mergedMap.get(idKey)) || (titleKey && mergedMap.get(titleKey));
-        const mergedAd: Announcement = existing 
-          ? { 
-              ...existing, 
-              ...ad, 
-              socio: ad.socio || existing.socio || 'Alianza', 
-              isAlianza: true, 
-              precio: ad.precio || existing.precio, 
-              descripcion: ad.descripcion || existing.descripcion, 
-              promo: ad.promo || existing.promo,
-              id: ad.id || existing.id
-            }
-          : { ...ad, socio: ad.socio || 'Alianza', isAlianza: true };
-
-        if (idKey) mergedMap.set(idKey, mergedAd);
-        if (titleKey) mergedMap.set(titleKey, mergedAd);
-      });
-
-      const seenCards = new Set<string>();
-      const combinedAnnouncements: Announcement[] = [];
-      for (const ad of mergedMap.values()) {
-        const dedupeKey = `${(ad.id || ad.titulo || '').trim().toLowerCase()}_${(ad.titulo || '').trim().toLowerCase()}`;
-        if (!seenCards.has(dedupeKey)) {
-          seenCards.add(dedupeKey);
-          combinedAnnouncements.push(ad);
-        }
-      }
-      if (combinedAnnouncements.length > 0) {
-        setAnnouncements(combinedAnnouncements);
+      // Directory announcements come strictly and exclusively from the country CSVs
+      if (parsedAnnouncements.length > 0) {
+        setAnnouncements(prev => {
+          if (
+            prev.length === parsedAnnouncements.length &&
+            prev.every((p, idx) => p.id === parsedAnnouncements[idx]?.id && p.titulo === parsedAnnouncements[idx]?.titulo && p.pais === parsedAnnouncements[idx]?.pais)
+          ) {
+            return prev;
+          }
+          return parsedAnnouncements;
+        });
         setError(null);
-        if (combinedAnnouncements.length > 6) {
-          try {
-            localStorage.setItem('roos_announcements_cache', JSON.stringify(combinedAnnouncements));
-          } catch (e) {}
-        }
+        try {
+          localStorage.setItem('roos_dir_cache_v4', JSON.stringify(parsedAnnouncements));
+        } catch (e) {}
 
         // Preload image assets for the first batch of cards for immediate rendering
-        combinedAnnouncements.slice(0, 15).forEach(ad => {
-          if (ad.imagen) {
-            const url = getOptimizedImageUrl(ad.imagen);
+        parsedAnnouncements.slice(0, 15).forEach(ad => {
+          const imgUrl = ad.imagen || ad.logo;
+          if (imgUrl) {
+            const url = getOptimizedImageUrl(imgUrl);
             const img = new Image();
             img.src = url;
           }
@@ -2584,9 +2559,6 @@ export default function App() {
             {/* DESKTOP DIRECTORY HEADER */}
             <div className="hidden md:block w-full mt-4" id="desktop-header-wrapper">
               <div className="text-center w-full py-8 px-4 flex flex-col justify-center items-center" id="marketplace-directory">
-                <span className="text-[#E85B81] font-bold text-xs uppercase tracking-[0.2em] font-sans">
-                  {t('directory.kicker')}
-                </span>
                 <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-[#18181B] mt-1.5 mb-2.5 tracking-tight">
                   {renderStyledTitleWithAmpersand(t('directory.title'))}
                 </h2>
@@ -2610,9 +2582,6 @@ export default function App() {
             {/* MOBILE DIRECTORY HEADER & CONTROLS */}
             <div className="block md:hidden w-full px-2 pt-14 sm:pt-16 pb-3" id="mobile-header-wrapper">
               <div className="text-center w-full pt-2 pb-3" id="mobile-marketplace-directory">
-                <span className="text-[#E85B81] font-bold text-[10px] uppercase tracking-[0.2em] font-sans">
-                  {t('directory.kicker')}
-                </span>
                 <h2 className="font-serif text-2xl font-bold text-[#18181B] mt-0.5 mb-1 tracking-tight">
                   {renderStyledTitleWithAmpersand(t('directory.mobileTitle'))}
                 </h2>

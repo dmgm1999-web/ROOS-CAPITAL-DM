@@ -100,7 +100,7 @@ export function DirectoryDualRowCarousel({
                 <Store className="w-4 h-4 text-[#E85B81]" />
               </span>
               <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#E85B81] font-sans">
-                {language === 'en' ? 'Marketplace • Featured Directory' : 'Marketplace • Directorio Destacado'}
+                {language === 'en' ? 'Home • Featured Directory' : 'Home • Directorio Destacado'}
               </span>
               <span className="px-2 py-0.5 rounded-full bg-neutral-200/80 text-neutral-700 text-[10px] font-bold">
                 8 Marcas
@@ -168,52 +168,40 @@ export function DirectoryDualRowCarousel({
 
             {/* Row 1 Content */}
             <div className="w-full overflow-hidden">
-              {/* Mobile: Single card animated */}
-              <div className="block sm:hidden">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={row1Ads[row1Index]?.id || row1Index}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.28, ease: 'easeOut' }}
-                    className="w-full max-w-sm mx-auto"
-                  >
-                    {row1Ads[row1Index] && (
+              {/* Mobile: Smooth transform slider (zero unmounting/blinking) */}
+              <div className="block sm:hidden overflow-hidden">
+                <div 
+                  className="flex transition-transform duration-500 ease-out"
+                  style={{ transform: `translateX(-${row1Index * 100}%)` }}
+                >
+                  {row1Ads.map((ad, idx) => (
+                    <div key={`r1_m_${ad.id || ad.titulo}_${idx}`} className="w-full shrink-0 px-1">
                       <AnnouncementCard
-                        ad={row1Ads[row1Index]}
+                        ad={ad}
                         onViewFull={onViewFull}
-                        isFavorite={isFavorite ? isFavorite(row1Ads[row1Index]) : false}
-                        onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(row1Ads[row1Index]) : undefined}
+                        isFavorite={isFavorite ? isFavorite(ad) : false}
+                        onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(ad) : undefined}
                         isDiamonds={false}
                       />
-                    )}
-                  </motion.div>
-                </AnimatePresence>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {/* Tablet & Desktop: Multi-card window */}
+              {/* Tablet & Desktop: Stable 4-card grid */}
               <div className="hidden sm:block">
-                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 w-full">
-                  {[0, 1, 2, 3].map((offset) => {
-                    const idx = (row1Index + offset) % row1Ads.length;
-                    const ad = row1Ads[idx];
-                    if (!ad) return null;
-                    return (
-                      <div 
-                        key={`row1_${ad.id || ad.titulo}_${offset}`}
-                        className={offset >= 2 ? (offset === 3 ? 'hidden xl:block' : 'hidden lg:block') : 'block'}
-                      >
-                        <AnnouncementCard
-                          ad={ad}
-                          onViewFull={onViewFull}
-                          isFavorite={isFavorite ? isFavorite(ad) : false}
-                          onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(ad) : undefined}
-                          isDiamonds={false}
-                        />
-                      </div>
-                    );
-                  })}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full">
+                  {row1Ads.map((ad, idx) => (
+                    <div key={`r1_d_${ad.id || ad.titulo}_${idx}`} className="w-full">
+                      <AnnouncementCard
+                        ad={ad}
+                        onViewFull={onViewFull}
+                        isFavorite={isFavorite ? isFavorite(ad) : false}
+                        onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(ad) : undefined}
+                        isDiamonds={false}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -257,52 +245,40 @@ export function DirectoryDualRowCarousel({
 
             {/* Row 2 Content */}
             <div className="w-full overflow-hidden">
-              {/* Mobile: Single card animated */}
-              <div className="block sm:hidden">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={row2Ads[row2Index]?.id || row2Index}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.28, ease: 'easeOut' }}
-                    className="w-full max-w-sm mx-auto"
-                  >
-                    {row2Ads[row2Index] && (
+              {/* Mobile: Smooth transform slider (zero unmounting/blinking) */}
+              <div className="block sm:hidden overflow-hidden">
+                <div 
+                  className="flex transition-transform duration-500 ease-out"
+                  style={{ transform: `translateX(-${row2Index * 100}%)` }}
+                >
+                  {row2Ads.map((ad, idx) => (
+                    <div key={`r2_m_${ad.id || ad.titulo}_${idx}`} className="w-full shrink-0 px-1">
                       <AnnouncementCard
-                        ad={row2Ads[row2Index]}
+                        ad={ad}
                         onViewFull={onViewFull}
-                        isFavorite={isFavorite ? isFavorite(row2Ads[row2Index]) : false}
-                        onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(row2Ads[row2Index]) : undefined}
+                        isFavorite={isFavorite ? isFavorite(ad) : false}
+                        onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(ad) : undefined}
                         isDiamonds={false}
                       />
-                    )}
-                  </motion.div>
-                </AnimatePresence>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {/* Tablet & Desktop: Multi-card window */}
+              {/* Tablet & Desktop: Stable 4-card grid */}
               <div className="hidden sm:block">
-                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 w-full">
-                  {[0, 1, 2, 3].map((offset) => {
-                    const idx = (row2Index + offset) % row2Ads.length;
-                    const ad = row2Ads[idx];
-                    if (!ad) return null;
-                    return (
-                      <div 
-                        key={`row2_${ad.id || ad.titulo}_${offset}`}
-                        className={offset >= 2 ? (offset === 3 ? 'hidden xl:block' : 'hidden lg:block') : 'block'}
-                      >
-                        <AnnouncementCard
-                          ad={ad}
-                          onViewFull={onViewFull}
-                          isFavorite={isFavorite ? isFavorite(ad) : false}
-                          onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(ad) : undefined}
-                          isDiamonds={false}
-                        />
-                      </div>
-                    );
-                  })}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full">
+                  {row2Ads.map((ad, idx) => (
+                    <div key={`r2_d_${ad.id || ad.titulo}_${idx}`} className="w-full">
+                      <AnnouncementCard
+                        ad={ad}
+                        onViewFull={onViewFull}
+                        isFavorite={isFavorite ? isFavorite(ad) : false}
+                        onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(ad) : undefined}
+                        isDiamonds={false}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -313,7 +289,7 @@ export function DirectoryDualRowCarousel({
             <span className="text-xs text-neutral-500 font-sans text-center sm:text-left">
               {language === 'en'
                 ? `Showing a preview of 8 businesses. Visit Directorio for full search, country filters, and complete catalog.`
-                : `Mostrando 8 tarjetas de muestra en Marketplace. Visita la pestaña Directorio para ver el catálogo completo con filtros.`}
+                : `Mostrando 8 tarjetas de muestra en Home. Visita la pestaña Directorio para ver el catálogo completo con filtros.`}
             </span>
             <button
               onClick={onNavigateToDirectory}

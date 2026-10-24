@@ -21,8 +21,8 @@ export function AlianzaCarousel({
   onNavigateToOutlet
 }: AlianzaCarouselProps) {
   const { language } = useLanguage();
-  // Display alliance ads featuring the latest Google Sheet listings first
-  const allianceAds = ads;
+  // Display strictly 8 alliance ad examples as requested
+  const allianceAds = ads.slice(0, 8);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -100,7 +100,7 @@ export function AlianzaCarousel({
                   Outlet
                 </span>
               </div>
-              <h3 className="font-serif text-base sm:text-lg md:text-xl font-bold text-[#18181B] truncate">
+              <h3 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-[#18181B] tracking-tight">
                 {language === 'en' ? 'Outlet Price Products' : 'Productos con precio de Outlet'}
               </h3>
             </div>
@@ -170,6 +170,7 @@ export function AlianzaCarousel({
                       isFavorite={isFavorite ? isFavorite(allianceAds[currentIndex]) : false}
                       onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(allianceAds[currentIndex]) : undefined}
                       isDiamonds={true}
+                      isOutlet={true}
                     />
                   )}
                 </motion.div>
@@ -195,29 +196,13 @@ export function AlianzaCarousel({
                         isFavorite={isFavorite ? isFavorite(ad) : false}
                         onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(ad) : undefined}
                         isDiamonds={true}
+                        isOutlet={true}
                       />
                     </div>
                   );
                 })}
               </div>
             </div>
-          </div>
-
-          {/* Indicator Dots */}
-          <div className="flex items-center justify-center gap-1.5 mt-3 pt-1 max-w-xs sm:max-w-md mx-auto overflow-x-auto no-scrollbar py-0.5">
-            {allianceAds.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentIndex(idx)}
-                className={`transition-all duration-300 rounded-full cursor-pointer focus:outline-none shrink-0 ${
-                  currentIndex === idx 
-                    ? 'w-6 h-2 bg-[#E85B81]' 
-                    : 'w-2 h-2 bg-neutral-300 hover:bg-neutral-400'
-                }`}
-                title={`Anuncio ${idx + 1}`}
-                aria-label={`Ir al anuncio ${idx + 1}`}
-              />
-            ))}
           </div>
         </div>
       </div>

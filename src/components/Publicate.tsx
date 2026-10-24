@@ -317,7 +317,7 @@ export default function Publicate({ onBack, onOpenForm, onOpenContact }: Publica
                   {language === 'en' ? 'MONTHLY' : 'MENSUAL'}
                 </span>
                 <div className="text-2xl sm:text-3xl font-lux font-black text-neutral-800">
-                  26 USD <span className="text-xs font-bold text-neutral-500">/{language === 'en' ? 'mo' : 'mes'}</span>
+                  <span className="text-base sm:text-lg font-bold text-neutral-600 mr-1 font-sans">{language === 'en' ? 'from ' : 'desde '}</span>$26 USD <span className="text-xs font-bold text-neutral-500">/{language === 'en' ? 'mo' : 'mes'}</span>
                 </div>
                 <p className="text-[11px] text-neutral-600 font-sans">
                   {language === 'en' ? 'Renew month by month. Cancel anytime.' : 'Renovación mes con mes. Cancela cuando quieras.'}
@@ -337,7 +337,7 @@ export default function Publicate({ onBack, onOpenForm, onOpenContact }: Publica
                     $312 USD
                   </span>
                   <div className="text-2xl sm:text-3xl font-lux font-black text-neutral-800">
-                    $264 USD <span className="text-xs font-bold text-neutral-500">/{language === 'en' ? 'yr' : 'año'}</span>
+                    <span className="text-base sm:text-lg font-bold text-neutral-600 mr-1 font-sans">{language === 'en' ? 'from ' : 'desde '}</span>$264 USD <span className="text-xs font-bold text-neutral-500">/{language === 'en' ? 'yr' : 'año'}</span>
                   </div>
                 </div>
                 <p className="text-[11px] text-neutral-600 font-sans">

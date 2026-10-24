@@ -27,6 +27,43 @@ interface DirectoryViewProps {
 
 const ITEMS_PER_PAGE = 24;
 
+/**
+ * Randomizes country order while round-robin interleaving announcements from all countries,
+ * preserving recency priority (latest rows from each country's sheets appear first).
+ */
+function interleaveAdsByCountry(ads: Announcement[]): Announcement[] {
+  if (ads.length <= 1) return ads;
+
+  const countryMap = new Map<string, Announcement[]>();
+  for (const ad of ads) {
+    const c = (ad.extractedCountry || ad.pais || 'Otros').trim();
+    if (!countryMap.has(c)) {
+      countryMap.set(c, []);
+    }
+    countryMap.get(c)!.push(ad);
+  }
+
+  // Stable deterministic country sequence (never random so it doesn't flicker or re-shuffle on re-renders)
+  const countries = Array.from(countryMap.keys()).sort((a, b) => a.localeCompare(b));
+
+  // Interleave round-robin across countries
+  const interleaved: Announcement[] = [];
+  let added = true;
+  let round = 0;
+  while (added) {
+    added = false;
+    for (const c of countries) {
+      const list = countryMap.get(c)!;
+      if (round < list.length) {
+        interleaved.push(list[round]);
+        added = true;
+      }
+    }
+    round++;
+  }
+  return interleaved;
+}
+
 export default function DirectoryView({
   ads,
   availableCategories: initialCategories,
@@ -258,6 +295,10 @@ export default function DirectoryView({
       });
     }
 
+    if (selectedCountries.length === 0) {
+      return interleaveAdsByCountry(result);
+    }
+
     return result;
   }, [
     directoryAds,
@@ -320,7 +361,7 @@ export default function DirectoryView({
               id="directory-back-btn"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>{language === 'en' ? 'Back to Marketplace' : 'Volver a Marketplace'}</span>
+              <span>{language === 'en' ? 'Back to Home' : 'Volver a Home'}</span>
             </button>
 
             {onNavigateToOutlet && (
@@ -687,27 +728,23 @@ export default function DirectoryView({
         ) : (
           /* Cards Grid */
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 w-full items-stretch" id="directory-cards-grid">
-            <AnimatePresence mode="popLayout">
-              {paginatedAds.map((ad, idx) => (
-                <motion.div
-                  key={`${ad.id || ad.titulo}-${idx}`}
-                  layout
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                  className="h-full flex flex-col"
-                >
-                  <AnnouncementCard
-                    ad={ad}
-                    isDiamonds={false}
-                    isFavorite={isFavorite ? isFavorite(ad) : false}
-                    onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(ad) : undefined}
-                    onViewFull={onViewFull}
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
+            {paginatedAds.map((ad, idx) => (
+              <motion.div
+                key={ad.id || `${ad.titulo}-${ad.web || idx}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.15 }}
+                className="h-full flex flex-col"
+              >
+                <AnnouncementCard
+                  ad={ad}
+                  isDiamonds={false}
+                  isFavorite={isFavorite ? isFavorite(ad) : false}
+                  onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(ad) : undefined}
+                  onViewFull={onViewFull}
+                />
+              </motion.div>
+            ))}
           </div>
         )}
 

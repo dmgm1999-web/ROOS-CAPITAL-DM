@@ -4,6 +4,7 @@ import { ArrowLeft, Search, Sparkles, Tag, X, Filter } from 'lucide-react';
 import { Announcement } from '../App';
 import AnnouncementCard from './AnnouncementCard';
 import CategoryEmojiBar from './CategoryEmojiBar';
+import { OutletFeaturedSection } from './OutletFeaturedSection';
 import { useLanguage } from '../context/LanguageContext';
 
 interface OutletViewProps {
@@ -126,7 +127,7 @@ export default function OutletView({
             id="outlet-back-btn"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>{language === 'en' ? 'Back to Marketplace' : 'Volver al Marketplace'}</span>
+            <span>{language === 'en' ? 'Back to Home' : 'Volver a Home'}</span>
           </button>
 
           {/* Hero Titles */}
@@ -141,6 +142,9 @@ export default function OutletView({
                 : 'El outlet de las plataformas líderes: tus marcas favoritas a precios de liquidación'}
             </p>
           </div>
+
+          {/* Featured Horizontal Banners (P5) & Brand Logos (P6) */}
+          <OutletFeaturedSection language={language} />
 
           {/* ========================================================================= */}
           {/* SEARCH BAR: EXACTLY MATCHING MARKETPLACE DESIGN                           */}
@@ -275,27 +279,25 @@ export default function OutletView({
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 w-full items-start">
-            <AnimatePresence mode="popLayout">
-              {filteredAds.map((ad, idx) => (
-                <motion.div
-                  key={`${ad.id || ad.titulo}-${idx}`}
-                  layout
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <AnnouncementCard
-                    ad={ad}
-                    isDiamonds={true}
-                    isFavorite={isFavorite ? isFavorite(ad) : false}
-                    onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(ad) : undefined}
-                    onViewFull={onViewFull}
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 w-full items-stretch">
+            {filteredAds.map((ad, idx) => (
+              <motion.div
+                key={ad.id || `${ad.titulo}-${ad.web || idx}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.15 }}
+                className="h-full flex flex-col"
+              >
+                <AnnouncementCard
+                  ad={ad}
+                  isDiamonds={true}
+                  isOutlet={true}
+                  isFavorite={isFavorite ? isFavorite(ad) : false}
+                  onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(ad) : undefined}
+                  onViewFull={onViewFull}
+                />
+              </motion.div>
+            ))}
           </div>
         )}
       </div>

@@ -4,8 +4,8 @@ import { Announcement } from '../App';
 import { CountryFlag, getCountryInfo } from '../utils/countryUtils';
 import { useLanguage } from '../context/LanguageContext';
 import { getOptimizedImageUrl, isLikelyImageUrl } from '../utils/imageUtils';
-import { extractPromoPercentage } from '../utils/promoUtils';
-import { FormattedPrice } from '../utils/priceUtils';
+import { FormattedPrice, formatDisplayPrice } from '../utils/priceUtils';
+import { translateOutletDescription, translateOutletPromo } from '../utils/outletTranslations';
 import { cn } from '../utils/cn';
 import roosLogoAnuncios from '../assets/images/roos_logo_anuncios.png';
 import roosCapitalLogo from '../assets/images/roos_capital_logo.png';
@@ -80,6 +80,7 @@ export interface AnnouncementCardProps {
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
   onViewFull?: (ad: Announcement) => void;
+  isOutlet?: boolean;
 }
 
 export const AnnouncementCard = React.memo(function AnnouncementCard({ 
@@ -87,7 +88,8 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
   isDiamonds = false, 
   isFavorite = false,
   onToggleFavorite,
-  onViewFull
+  onViewFull,
+  isOutlet = false
 }: AnnouncementCardProps) {
   const { t, translateCategory, language } = useLanguage();
   const [imgError, setImgError] = useState(false);
@@ -211,24 +213,23 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
       )}
 
       <div className={cn(
-        "flex p-2.5 xs:p-3 sm:p-4 pb-3 flex-col justify-start gap-1 w-full flex-1",
-        !hasImg && "justify-between"
+        "flex p-2.5 xs:p-3 sm:p-4 pb-3 flex-col justify-between gap-1 w-full flex-1"
       )}>
         {/* Information */}
-        <div className="flex flex-col min-w-0 overflow-hidden justify-start gap-1">
+        <div className="flex flex-col min-w-0 overflow-hidden justify-start gap-1 flex-1">
           <div className="min-w-0 overflow-hidden">
             <div className="flex items-start justify-between mb-1 min-w-0 overflow-hidden">
               <div className="flex justify-between items-start gap-2.5 w-full min-w-0">
                 {ad.logo && ad.logo.trim() && ad.logo !== ad.imagen && !logoError && (
                   <div 
                     onClick={() => onViewFull?.(ad)}
-                    className="hidden md:block w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden shadow-xs flex-shrink-0 bg-white border border-[#EFE8DF] cursor-pointer hover:opacity-90 transition-opacity"
+                    className="hidden md:flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden shadow-xs flex-shrink-0 bg-white border border-[#EFE8DF] cursor-pointer hover:opacity-90 transition-opacity p-0.5"
                     title={`Ver detalles de ${ad.titulo}`}
                   >
                     <img 
                       src={getOptimizedImageUrl(ad.logo)} 
                       alt="" 
-                      className="w-full h-full object-cover" 
+                      className="w-full h-full object-contain" 
                       referrerPolicy="no-referrer" 
                       loading="lazy"
                       onError={() => setLogoError(true)}
@@ -238,10 +239,10 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
                 
                 {/* Left side: Company name and category */}
                 <div className="flex flex-col min-w-0 flex-1 overflow-hidden pr-0.5">
-                  <div className="flex items-center justify-between gap-1 w-full h-[26px] sm:h-[28px]">
+                  <div className="flex items-center justify-between gap-1 w-full min-h-[26px] sm:min-h-[28px]">
                     <h2 
                       onClick={() => onViewFull?.(ad)}
-                      className="text-sm xs:text-base sm:text-lg font-serif font-bold leading-none text-[#18181B] hover:text-[#E85B81] transition-colors block w-full truncate select-none cursor-pointer" 
+                      className="text-sm xs:text-base sm:text-lg font-serif font-bold leading-tight text-[#18181B] hover:text-[#E85B81] transition-colors block w-full truncate select-none cursor-pointer" 
                       title={`Clic para abrir: ${ad.titulo}`}
                     >
                       {renderCleanBrandTitle(ad.titulo)}
@@ -261,77 +262,104 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
                     )}
                   </div>
 
-                  {/* Category and Country with Real SVG Flag (Strictly 1 line) */}
-                  <div className="h-[20px] flex items-center gap-1.5 flex-nowrap mt-0.5 text-neutral-500 text-[10px] sm:text-xs font-sans font-medium w-full select-none truncate">
-                    <span className="truncate">{translateCategory(ad.categoria)}</span>
-                    <span className="text-neutral-300 shrink-0">·</span>
-                    <span 
-                      className="inline-flex items-center gap-1.5 cursor-default select-none font-semibold text-neutral-700 shrink-0" 
-                      title={countryInfo.name}
-                    >
-                      <CountryFlag countryCode={countryInfo.code} className="w-4 h-3 sm:w-4.5 sm:h-3.5 shrink-0" title={countryInfo.name} />
-                      <span className="text-[10px] sm:text-xs text-neutral-600 truncate">{countryInfo.name}</span>
-                    </span>
-                  </div>
+                  {isOutlet ? (
+                    <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap mt-1 select-none text-[10px] sm:text-xs font-sans min-w-0">
+                      <span className="font-semibold text-neutral-600 shrink-0">
+                        {translateCategory(ad.categoria)}
+                      </span>
+                      {ad.online && (
+                        <span className="inline-flex items-center text-[8px] sm:text-[9px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-1.5 sm:px-2 py-0.5 rounded-full shadow-2xs shrink-0 whitespace-nowrap">
+                          {ad.onlineLabel === 'Sólo online' ? t('card.onlineOnly') : (ad.onlineLabel === 'También online' ? t('card.onlineAlso') : t('card.online'))}
+                        </span>
+                      )}
+                      {ad.internacional && (
+                        <span className="inline-flex items-center text-[8px] sm:text-[9px] font-bold text-blue-800 bg-blue-50 border border-blue-200/80 px-1.5 sm:px-2 py-0.5 rounded-full shadow-2xs shrink-0 whitespace-nowrap">
+                          {t('card.international')}
+                        </span>
+                      )}
+                      {ad.proveedor && (
+                        <span className="inline-flex items-center text-[8px] sm:text-[9px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-1.5 sm:px-2 py-0.5 rounded-full shadow-2xs shrink-0 whitespace-nowrap">
+                          {t('card.supplier')}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      {/* Category and Country with Real SVG Flag (Strictly 1 line) */}
+                      <div className="h-[20px] flex items-center gap-1.5 flex-nowrap mt-0.5 text-neutral-500 text-[10px] sm:text-xs font-sans font-medium w-full select-none truncate">
+                        <span className="truncate">{translateCategory(ad.categoria)}</span>
+                        <span className="text-neutral-300 shrink-0">·</span>
+                        <span 
+                          className="inline-flex items-center gap-1.5 cursor-default select-none font-semibold text-neutral-700 shrink-0" 
+                          title={countryInfo.name}
+                        >
+                          <CountryFlag countryCode={countryInfo.code} className="w-4 h-3 sm:w-4.5 sm:h-3.5 shrink-0" title={countryInfo.name} />
+                          <span className="text-[10px] sm:text-xs text-neutral-600 truncate">{countryInfo.name}</span>
+                        </span>
+                      </div>
 
-                  {/* Badges row strictly in ONE single row matching reference image */}
-                  <div className="h-[26px] flex items-center gap-1 sm:gap-1.5 flex-nowrap overflow-x-auto no-scrollbar mt-1.5 select-none">
-                    {ad.online && (
-                      <span className="inline-flex items-center text-[8px] sm:text-[9px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-1.5 sm:px-2 py-0.5 rounded-full shadow-2xs shrink-0 whitespace-nowrap">
-                        {ad.onlineLabel === 'Sólo online' ? t('card.onlineOnly') : (ad.onlineLabel === 'También online' ? t('card.onlineAlso') : t('card.online'))}
-                      </span>
-                    )}
-                    {ad.internacional && (
-                      <span className="inline-flex items-center text-[8px] sm:text-[9px] font-bold text-blue-800 bg-blue-50 border border-blue-200/80 px-1.5 sm:px-2 py-0.5 rounded-full shadow-2xs shrink-0 whitespace-nowrap">
-                        {t('card.international')}
-                      </span>
-                    )}
-                    {ad.proveedor && (
-                      <span className="inline-flex items-center text-[8px] sm:text-[9px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-1.5 sm:px-2 py-0.5 rounded-full shadow-2xs shrink-0 whitespace-nowrap">
-                        {t('card.supplier')}
-                      </span>
-                    )}
-                    {!isAlianzaAd && ad.precio && ad.precio.trim() && (
-                      <span className="inline-flex items-center text-[8px] sm:text-[9px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300/80 px-1.5 sm:px-2 py-0.5 rounded-full shadow-2xs shrink-0 whitespace-nowrap">
-                        {ad.precio.trim()}
-                      </span>
-                    )}
-                  </div>
+                      {/* Badges row strictly in ONE single row matching reference image */}
+                      <div className="h-[26px] flex items-center gap-1 sm:gap-1.5 flex-nowrap overflow-x-auto no-scrollbar mt-1.5 select-none">
+                        {ad.online && (
+                          <span className="inline-flex items-center text-[8px] sm:text-[9px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-1.5 sm:px-2 py-0.5 rounded-full shadow-2xs shrink-0 whitespace-nowrap">
+                            {ad.onlineLabel === 'Sólo online' ? t('card.onlineOnly') : (ad.onlineLabel === 'También online' ? t('card.onlineAlso') : t('card.online'))}
+                          </span>
+                        )}
+                        {ad.internacional && (
+                          <span className="inline-flex items-center text-[8px] sm:text-[9px] font-bold text-blue-800 bg-blue-50 border border-blue-200/80 px-1.5 sm:px-2 py-0.5 rounded-full shadow-2xs shrink-0 whitespace-nowrap">
+                            {t('card.international')}
+                          </span>
+                        )}
+                        {ad.proveedor && (
+                          <span className="inline-flex items-center text-[8px] sm:text-[9px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-1.5 sm:px-2 py-0.5 rounded-full shadow-2xs shrink-0 whitespace-nowrap">
+                            {t('card.supplier')}
+                          </span>
+                        )}
+                        {!isAlianzaAd && ad.precio && ad.precio.trim() && (
+                          <span className="inline-flex items-center text-[8px] sm:text-[9px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300/80 px-1.5 sm:px-2 py-0.5 rounded-full shadow-2xs shrink-0 whitespace-nowrap">
+                            {formatDisplayPrice(ad.precio, language)}
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  )}
 
                   {/* For Alianza ads: Description right below badges, then price with superscript cents and static promo badge with exact sheet text */}
                   {isAlianzaAd ? (() => {
-                    const promoText = (ad.promo || '').trim();
+                    const displayDesc = translateOutletDescription(ad.descripcion, language);
+                    const promoText = translateOutletPromo(ad.promo, language);
                     const priceRaw = (ad.precio || '').trim();
-                    const priceDigits = (priceRaw.match(/\d/g) || []).length;
-                    const isVeryLongPrice = priceDigits >= 8 || priceRaw.length >= 13;
-                    const isLongPrice = priceDigits >= 6 || priceRaw.length >= 9;
 
                     return (
                       <div className="flex flex-col mt-2 gap-1.5 w-full min-w-0">
-                        {ad.descripcion && ad.descripcion.trim() && (
-                          <p className="text-xs sm:text-[13px] font-medium text-neutral-800 leading-snug line-clamp-3 font-sans mt-0.5">
-                            {ad.descripcion.replace(/^#+/, '').trim()}
+                        {displayDesc && (
+                          <p className="text-xs sm:text-[13px] font-medium text-neutral-800 leading-snug line-clamp-2 min-h-[2.8em] font-sans mt-0.5">
+                            {displayDesc.replace(/^#+/, '').trim()}
                           </p>
                         )}
 
                         {(priceRaw || promoText) && (
-                          <div className="flex items-center gap-2 flex-nowrap w-full min-w-0 overflow-hidden mt-1 select-none">
+                          <div className="flex items-center gap-2 flex-wrap w-full min-w-0 mt-1 select-none">
                             {priceRaw && (
                               <FormattedPrice 
                                 price={priceRaw}
+                                language={language}
                                 className={cn(
                                   "font-black text-[#E85B81] font-sans tracking-tight whitespace-nowrap shrink-0 leading-none tabular-nums",
-                                  isVeryLongPrice 
-                                    ? "text-[12px] xs:text-[13px] sm:text-sm" 
-                                    : isLongPrice 
-                                      ? "text-sm xs:text-[15px] sm:text-base" 
-                                      : "text-base xs:text-lg sm:text-xl"
+                                  isOutlet 
+                                    ? "text-xl sm:text-2xl" 
+                                    : "text-base sm:text-lg"
                                 )}
                               />
                             )}
                             {promoText && (
                               <div 
-                                className="px-2 xs:px-2.5 py-0.5 xs:py-1 rounded-md bg-[#E85B81] text-white text-[10.5px] xs:text-xs font-black tracking-tight shadow-2xs select-none whitespace-nowrap shrink-0 flex items-center justify-center leading-none"
+                                className={cn(
+                                  "bg-[#E85B81] text-white font-black tracking-tight shadow-2xs select-none whitespace-nowrap shrink-0 flex items-center justify-center leading-none",
+                                  isOutlet
+                                    ? "px-2.5 py-1 rounded-md text-xs sm:text-[13px]"
+                                    : "px-2 py-0.5 rounded-md text-[10.5px] sm:text-xs"
+                                )}
                                 title={promoText}
                               >
                                 <span>{promoText}</span>
@@ -391,7 +419,7 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
           </div>
 
           {/* Contact area and action buttons at bottom */}
-          <div className="flex flex-col mt-2 pt-1.5 border-t border-[#EFE8DF] w-full" id="card-bottom-bar">
+          <div className="flex flex-col mt-auto pt-2 border-t border-[#EFE8DF] w-full" id="card-bottom-bar">
             {/* Dedicated "Comprar" button for Alianza ads */}
             {isAlianzaAd && webUrl && (
               <div className="w-full mb-2">

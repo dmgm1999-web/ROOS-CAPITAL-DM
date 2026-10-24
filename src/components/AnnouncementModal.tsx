@@ -16,8 +16,8 @@ import {
 } from 'lucide-react';
 import { Announcement } from '../App';
 import { getOptimizedImageUrl } from '../utils/imageUtils';
-import { extractPromoPercentage } from '../utils/promoUtils';
-import { FormattedPrice } from '../utils/priceUtils';
+import { FormattedPrice, formatDisplayPrice } from '../utils/priceUtils';
+import { translateOutletDescription, translateOutletPromo } from '../utils/outletTranslations';
 import { useLanguage } from '../context/LanguageContext';
 import { CountryFlag, getCountryInfo, translateCountryName } from '../utils/countryUtils';
 import { 
@@ -269,17 +269,18 @@ export default function AnnouncementModal({ ad, onClose }: AnnouncementModalProp
                 <div className="flex flex-col mt-2 gap-1.5">
                   {ad.descripcion && ad.descripcion.trim() && (
                     <p className="text-xs sm:text-sm font-medium text-neutral-800 leading-snug line-clamp-3 font-sans">
-                      {ad.descripcion.replace(/^#+/, '').trim()}
+                      {translateOutletDescription(ad.descripcion, language).replace(/^#+/, '').trim()}
                     </p>
                   )}
                   {(ad.precio || ad.promo) && (() => {
-                    const promoText = (ad.promo || '').trim();
+                    const promoText = translateOutletPromo(ad.promo, language);
                     const priceRaw = (ad.precio || '').trim();
                     return (
                       <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap mt-0.5 select-none">
                         {priceRaw && (
                           <FormattedPrice 
                             price={priceRaw}
+                            language={language}
                             className="text-2xl sm:text-3xl font-black text-[#E85B81] font-sans tracking-tight"
                           />
                         )}
@@ -300,7 +301,7 @@ export default function AnnouncementModal({ ad, onClose }: AnnouncementModalProp
                   {ad.precio && ad.precio.trim() && (
                     <div className="mt-1">
                       <span className="inline-flex items-center text-[10px] sm:text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-300/80 px-2.5 py-0.5 rounded-full shadow-2xs">
-                        {ad.precio.trim()}
+                        {formatDisplayPrice(ad.precio, language)}
                       </span>
                     </div>
                   )}
