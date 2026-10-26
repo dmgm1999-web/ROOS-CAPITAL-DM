@@ -74,6 +74,192 @@ export function renderCleanBrandTitle(title: string) {
   );
 }
 
+export type SkullPosition = 'top' | 'right' | 'bottom' | 'left';
+
+// Super Kawaii Peeking Halloween Calavera (Cute Skull) with big sparkling anime eyes, blushing cheeks & bone paws
+export function PeekingSkull({ position }: { position: SkullPosition }) {
+  const uid = React.useId().replace(/:/g, '_');
+  const positionClasses = {
+    top: "-top-3 sm:-top-3.5 left-1/2 -translate-x-1/2",
+    right: "-right-3 sm:-right-3.5 top-1/2 -translate-y-1/2 rotate-90",
+    bottom: "-bottom-3 sm:-bottom-3.5 left-1/2 -translate-x-1/2 rotate-180",
+    left: "-left-3 sm:-left-3.5 top-1/2 -translate-y-1/2 -rotate-90"
+  }[position];
+
+  return (
+    <div
+      className={cn(
+        "absolute z-30 pointer-events-none select-none transition-transform duration-300 group-hover/wrapper:scale-110",
+        positionClasses
+      )}
+      aria-hidden="true"
+    >
+      <svg
+        width="38"
+        height="30"
+        viewBox="0 0 76 60"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="overflow-visible drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]"
+      >
+        <defs>
+          <radialGradient id={`kawaiiSkullGrad_${uid}`} cx="50%" cy="35%" r="65%">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="70%" stopColor="#FFFDF7" />
+            <stop offset="100%" stopColor="#F6EFE6" />
+          </radialGradient>
+          <radialGradient id={`skullCheek_${uid}`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#E85B81" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="#E85B81" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+
+        {/* Two cute little bone paws/knuckles clutching onto the card edge */}
+        <g fill="#FFFDF7" stroke="#D8CEBD" strokeWidth="1.2">
+          {/* Left Paws */}
+          <circle cx="16" cy="52" r="3.4" />
+          <circle cx="22" cy="53" r="3" />
+          <circle cx="28" cy="54" r="2.8" />
+          {/* Right Paws */}
+          <circle cx="48" cy="54" r="2.8" />
+          <circle cx="54" cy="53" r="3" />
+          <circle cx="60" cy="52" r="3.4" />
+        </g>
+
+        {/* Cute Rounded Kawaii Skull Head */}
+        <path
+          d="M 16 38 C 11 20, 20 6, 38 6 C 56 6, 65 20, 60 38 C 58 46, 52 50, 52 54 L 24 54 C 24 50, 18 46, 16 38 Z"
+          fill={`url(#kawaiiSkullGrad_${uid})`}
+          stroke="#D8CEBD"
+          strokeWidth="1.8"
+        />
+
+        {/* Rosy Kawaii Blushing Cheeks in ROOS Fuchsia */}
+        <ellipse cx="23" cy="38" rx="5.5" ry="3.2" fill={`url(#skullCheek_${uid})`} />
+        <ellipse cx="53" cy="38" rx="5.5" ry="3.2" fill={`url(#skullCheek_${uid})`} />
+
+        {/* Big Sparkling Kawaii Anime Eyes */}
+        <ellipse cx="26" cy="27" rx="7" ry="9.5" fill="#18181B" transform="rotate(-3 26 27)" />
+        <ellipse cx="50" cy="27" rx="7" ry="9.5" fill="#18181B" transform="rotate(3 50 27)" />
+        {/* Double white sparkles in each eye */}
+        <circle cx="28" cy="24" r="2.8" fill="#FFFFFF" />
+        <circle cx="24" cy="30" r="1.4" fill="#FFFFFF" />
+        <circle cx="52" cy="24" r="2.8" fill="#FFFFFF" />
+        <circle cx="48" cy="30" r="1.4" fill="#FFFFFF" />
+
+        {/* Cute Little Inverted Heart Nose */}
+        <path
+          d="M 38 33 C 36.5 31, 35 33.5, 38 36.5 C 41 33.5, 39.5 31, 38 33 Z"
+          fill="#18181B"
+        />
+
+        {/* Sweet Happy Kawaii Smile with Cute Stitch Accent */}
+        <path d="M 30 45 Q 38 49 46 45" stroke="#18181B" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+        <path d="M 34 44.5 L 34 47.5" stroke="#18181B" strokeWidth="1.1" strokeLinecap="round" />
+        <path d="M 38 45.5 L 38 48.5" stroke="#18181B" strokeWidth="1.1" strokeLinecap="round" />
+        <path d="M 42 44.5 L 42 47.5" stroke="#18181B" strokeWidth="1.1" strokeLinecap="round" />
+      </svg>
+    </div>
+  );
+}
+
+// Super Kawaii Peeking Halloween Pumpkin with big sparkling anime eyes, blushing cheeks & chubby paws
+export function PeekingPumpkin({ position }: { position: SkullPosition }) {
+  const uid = React.useId().replace(/:/g, '_');
+  const positionClasses = {
+    top: "-top-3 sm:-top-3.5 left-1/2 -translate-x-1/2",
+    right: "-right-3 sm:-right-3.5 top-1/2 -translate-y-1/2 rotate-90",
+    bottom: "-bottom-3 sm:-bottom-3.5 left-1/2 -translate-x-1/2 rotate-180",
+    left: "-left-3 sm:-left-3.5 top-1/2 -translate-y-1/2 -rotate-90"
+  }[position];
+
+  return (
+    <div
+      className={cn(
+        "absolute z-30 pointer-events-none select-none transition-transform duration-300 group-hover/wrapper:scale-110",
+        positionClasses
+      )}
+      aria-hidden="true"
+    >
+      <svg
+        width="38"
+        height="30"
+        viewBox="0 0 76 60"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="overflow-visible drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]"
+      >
+        <defs>
+          <radialGradient id={`kawaiiPumpGrad_${uid}`} cx="50%" cy="30%" r="65%">
+            <stop offset="0%" stopColor="#FFA63D" />
+            <stop offset="65%" stopColor="#FF7A00" />
+            <stop offset="100%" stopColor="#E65100" />
+          </radialGradient>
+          <radialGradient id={`pumpCheek_${uid}`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#E85B81" stopOpacity="0.65" />
+            <stop offset="100%" stopColor="#E85B81" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+
+        {/* Cute Little Green Stem & Leaf */}
+        <path
+          d="M 37 12 C 36 5, 41 3, 44 2 C 43 5, 41 8, 40 12 Z"
+          fill="#2E7D32"
+          stroke="#1B5E20"
+          strokeWidth="1"
+        />
+        <path
+          d="M 41 8 C 46 6, 49 8, 48 11 C 45 11, 43 10, 41 8 Z"
+          fill="#4CAF50"
+        />
+
+        {/* Chubby Pumpkin Lobes */}
+        <ellipse cx="24" cy="32" rx="14" ry="20" fill={`url(#kawaiiPumpGrad_${uid})`} stroke="#C0390B" strokeWidth="1.2" />
+        <ellipse cx="52" cy="32" rx="14" ry="20" fill={`url(#kawaiiPumpGrad_${uid})`} stroke="#C0390B" strokeWidth="1.2" />
+        <ellipse cx="38" cy="33" rx="16" ry="21" fill={`url(#kawaiiPumpGrad_${uid})`} stroke="#C0390B" strokeWidth="1.4" />
+
+        {/* Rosy Kawaii Blushing Cheeks in ROOS Fuchsia */}
+        <ellipse cx="23" cy="40" rx="5.5" ry="3.2" fill={`url(#pumpCheek_${uid})`} />
+        <ellipse cx="53" cy="40" rx="5.5" ry="3.2" fill={`url(#pumpCheek_${uid})`} />
+
+        {/* Big Sparkling Kawaii Anime Eyes */}
+        <ellipse cx="28" cy="30" rx="6.5" ry="9" fill="#18181B" transform="rotate(-3 28 30)" />
+        <ellipse cx="48" cy="30" rx="6.5" ry="9" fill="#18181B" transform="rotate(3 48 30)" />
+        {/* Double white sparkles in each eye */}
+        <circle cx="30" cy="27" r="2.6" fill="#FFFFFF" />
+        <circle cx="26" cy="33" r="1.3" fill="#FFFFFF" />
+        <circle cx="50" cy="27" r="2.6" fill="#FFFFFF" />
+        <circle cx="46" cy="33" r="1.3" fill="#FFFFFF" />
+
+        {/* Sweet Open Happy Smile with Pink Tongue */}
+        <path
+          d="M 33 40 Q 38 46 43 40"
+          stroke="#18181B"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          fill="none"
+        />
+        <path
+          d="M 33.5 40.5 Q 38 47 42.5 40.5 Z"
+          fill="#18181B"
+        />
+        <path
+          d="M 35.5 42.5 Q 38 45.5 40.5 42.5 Q 40.5 44.5 38 45.5 Q 35.5 44.5 35.5 42.5 Z"
+          fill="#E85B81"
+        />
+
+        {/* Two cute chubby little orange paws clutching the card edge */}
+        <g fill="#E65100" stroke="#9A3412" strokeWidth="1">
+          <circle cx="18" cy="52" r="3.5" />
+          <circle cx="24" cy="53" r="3" />
+          <circle cx="52" cy="53" r="3" />
+          <circle cx="58" cy="52" r="3.5" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
 export interface AnnouncementCardProps { 
   ad: Announcement; 
   isDiamonds?: boolean; 
@@ -81,6 +267,8 @@ export interface AnnouncementCardProps {
   onToggleFavorite?: () => void;
   onViewFull?: (ad: Announcement) => void;
   isOutlet?: boolean;
+  index?: number;
+  hideHalloweenPeeking?: boolean;
 }
 
 export const AnnouncementCard = React.memo(function AnnouncementCard({ 
@@ -89,7 +277,9 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
   isFavorite = false,
   onToggleFavorite,
   onViewFull,
-  isOutlet = false
+  isOutlet = false,
+  index,
+  hideHalloweenPeeking = false
 }: AnnouncementCardProps) {
   const { t, translateCategory, language } = useLanguage();
   const [imgError, setImgError] = useState(false);
@@ -99,6 +289,35 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
     setImgError(false);
     setLogoError(false);
   }, [ad.imagen, ad.logo, ad.id]);
+
+  // Determine peeking position: cycles ['top', 'right', 'bottom', 'left'] so positions do not repeat in rows
+  const cardPosition: SkullPosition = React.useMemo(() => {
+    const POSITIONS: SkullPosition[] = ['top', 'right', 'bottom', 'left'];
+    if (typeof index === 'number') {
+      return POSITIONS[Math.abs(index) % POSITIONS.length];
+    }
+    let hash = 0;
+    const str = ad.id || ad.titulo || 'card';
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash << 5) - hash + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return POSITIONS[Math.abs(hash) % POSITIONS.length];
+  }, [index, ad.id, ad.titulo]);
+
+  // Interleave: card 0 = Skull, card 1 = Pumpkin, card 2 = Skull, card 3 = Pumpkin...
+  const isPumpkin = React.useMemo(() => {
+    if (typeof index === 'number') {
+      return Math.abs(index) % 2 === 1;
+    }
+    let hash = 0;
+    const str = ad.id || ad.titulo || 'card';
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash << 5) - hash + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash) % 2 === 1;
+  }, [index, ad.id, ad.titulo]);
 
   const isTopSocio = ad.socio?.toLowerCase().includes('top') || ad.socio?.toLowerCase().includes('vip');
   const isTrending = ad.socio?.toLowerCase().includes('tendencia') || ad.categoria?.toLowerCase().includes('tendencia');
@@ -139,14 +358,24 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
   const hasImg = Boolean(ad.imagen && ad.imagen.trim() && isLikelyImageUrl(ad.imagen));
 
   return (
-    <article 
-      className={cn(
-        "bg-white rounded-2xl sm:rounded-3xl border border-[#EFE8DF] group relative shadow-xs w-full h-full flex flex-col justify-between overflow-hidden transition-all duration-150 hover:shadow-md hover:border-[#E85B81]/40",
-        isTopSocio 
-          ? "ring-2 ring-[#E85B81]/30 border-[#E85B81]/40" 
-          : "border-[#EFE8DF]"
+    <div className="relative w-full h-full group/wrapper">
+      {/* Halloween Peeking Calavera or Calabaza (Interleaved: Skull, Pumpkin, Skull, Pumpkin...) */}
+      {!hideHalloweenPeeking && (
+        isPumpkin ? (
+          <PeekingPumpkin position={cardPosition} />
+        ) : (
+          <PeekingSkull position={cardPosition} />
+        )
       )}
-    >
+
+      <article 
+        className={cn(
+          "bg-white rounded-2xl sm:rounded-3xl border border-[#EFE8DF] group relative shadow-xs w-full h-full flex flex-col justify-between overflow-hidden transition-all duration-150 hover:shadow-md hover:border-[#E85B81]/40",
+          isTopSocio 
+            ? "ring-2 ring-[#E85B81]/30 border-[#E85B81]/40" 
+            : "border-[#EFE8DF]"
+        )}
+      >
       {/* Top accent border in exact fuchsia #E85B81 */}
       <div className="w-full h-1.5 bg-[#E85B81] shrink-0" />
 
@@ -474,7 +703,8 @@ export const AnnouncementCard = React.memo(function AnnouncementCard({
           </div>
         </div>
       </article>
-    );
-  });
+    </div>
+  );
+});
 
 export default AnnouncementCard;

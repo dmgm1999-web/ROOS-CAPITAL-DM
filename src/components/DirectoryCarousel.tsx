@@ -140,11 +140,13 @@ export function DirectoryCarousel({
     setCurrentIndex((prev) => (prev - 1 + totalItems) % totalItems);
   }, [totalItems]);
 
-  // Automatic auto-scroll/sliding every 3.8 seconds when not paused
+  // Automatic auto-scroll/sliding every 3.8 seconds when not paused and tab is visible
   useEffect(() => {
     if (isPaused || totalItems <= 1) return;
     const interval = setInterval(() => {
-      nextSlide();
+      if (document.visibilityState === 'visible') {
+        nextSlide();
+      }
     }, 3800);
     return () => clearInterval(interval);
   }, [isPaused, totalItems, nextSlide]);
@@ -214,7 +216,7 @@ export function DirectoryCarousel({
 
         {/* Single-Row Carousel Container */}
         <div 
-          className="relative bg-gradient-to-b from-[#FAF8F5] via-white/80 to-[#FAF8F5] p-3 sm:p-5 rounded-3xl border border-[#EFE8DF] shadow-xs"
+          className="relative bg-gradient-to-b from-[#FAF8F5] via-white/80 to-[#FAF8F5] p-3 sm:p-5 rounded-3xl border border-[#EFE8DF] shadow-xs overflow-visible"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -242,8 +244,8 @@ export function DirectoryCarousel({
             </div>
           </div>
 
-          {/* Carousel Cards Viewport */}
-          <div className="w-full overflow-hidden">
+          {/* Carousel Cards Viewport (overflow-visible with padding so peeking characters are fully shown) */}
+          <div className="w-full overflow-visible py-3 sm:py-4 px-1 sm:px-2">
             {/* Mobile View: 1 card active with slide animation */}
             <div className="block sm:hidden">
               <AnimatePresence mode="wait">
@@ -253,11 +255,12 @@ export function DirectoryCarousel({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -25 }}
                   transition={{ duration: 0.28, ease: 'easeOut' }}
-                  className="w-full max-w-sm mx-auto"
+                  className="w-full max-w-sm mx-auto py-2 px-1"
                 >
                   {directoryAds[currentIndex] && (
                     <AnnouncementCard
                       ad={directoryAds[currentIndex]}
+                      index={currentIndex}
                       onViewFull={onViewFull}
                       isFavorite={isFavorite ? isFavorite(directoryAds[currentIndex]) : false}
                       onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(directoryAds[currentIndex]) : undefined}
@@ -270,7 +273,7 @@ export function DirectoryCarousel({
 
             {/* Desktop & Tablet View: 4-card sliding window (or 2-3 on tablet) */}
             <div className="hidden sm:block">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 w-full items-stretch">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 w-full items-stretch py-2 px-1">
                 {[0, 1, 2, 3].map((offset) => {
                   const idx = (currentIndex + offset) % totalItems;
                   const ad = directoryAds[idx];
@@ -278,10 +281,11 @@ export function DirectoryCarousel({
                   return (
                     <div 
                       key={`dir_${ad.id || ad.titulo}_${offset}`}
-                      className={`h-full flex flex-col ${offset === 3 ? 'hidden lg:block' : offset === 2 ? 'hidden md:block' : 'block'}`}
+                      className={`h-full flex flex-col relative py-1 px-0.5 ${offset === 3 ? 'hidden lg:block' : offset === 2 ? 'hidden md:block' : 'block'}`}
                     >
                       <AnnouncementCard
                         ad={ad}
+                        index={offset}
                         onViewFull={onViewFull}
                         isFavorite={isFavorite ? isFavorite(ad) : false}
                         onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(ad) : undefined}

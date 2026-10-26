@@ -43,11 +43,13 @@ export function AlianzaCarousel({
     setCurrentIndex((prev) => (prev - 1 + totalItems) % totalItems);
   }, [totalItems]);
 
-  // Automatic auto-scroll/sliding every 3.8 seconds when not paused
+  // Automatic auto-scroll/sliding every 3.8 seconds when not paused and tab is visible
   useEffect(() => {
     if (isPaused || totalItems <= 1) return;
     const interval = setInterval(() => {
-      nextSlide();
+      if (document.visibilityState === 'visible') {
+        nextSlide();
+      }
     }, 3800);
     return () => clearInterval(interval);
   }, [isPaused, totalItems, nextSlide]);
@@ -120,7 +122,7 @@ export function AlianzaCarousel({
         {/* Carousel Frame */}
         <div 
           ref={containerRef}
-          className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#FFF5F8]/50 to-white/70 p-2 sm:p-4 border border-[#E85B81]/20 shadow-xs"
+          className="relative overflow-visible rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#FFF5F8]/50 to-white/70 p-3 sm:p-5 border border-[#E85B81]/20 shadow-xs"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -151,7 +153,7 @@ export function AlianzaCarousel({
           </button>
 
           {/* Cards Track: Mobile shows 1 card, md shows 2 cards, lg shows 3 or 4 cards */}
-          <div className="w-full">
+          <div className="w-full overflow-visible py-2 px-1">
             {/* Mobile View: 1 single centered card sliding smoothly with AnimatePresence */}
             <div className="block sm:hidden">
               <AnimatePresence mode="wait">
@@ -161,11 +163,12 @@ export function AlianzaCarousel({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -25 }}
                   transition={{ duration: 0.28, ease: 'easeOut' }}
-                  className="w-full max-w-sm mx-auto"
+                  className="w-full max-w-sm mx-auto py-2 px-1"
                 >
                   {allianceAds[currentIndex] && (
                     <AnnouncementCard
                       ad={allianceAds[currentIndex]}
+                      index={currentIndex}
                       onViewFull={onViewFull}
                       isFavorite={isFavorite ? isFavorite(allianceAds[currentIndex]) : false}
                       onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(allianceAds[currentIndex]) : undefined}
@@ -179,7 +182,7 @@ export function AlianzaCarousel({
 
             {/* Tablet & Desktop View: 2 to 3 cards visible with smooth sliding */}
             <div className="hidden sm:block">
-              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 w-full">
+              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 w-full py-2 px-1">
                 {/* Dynamically slice window of cards starting at currentIndex */}
                 {[0, 1, 2, 3].map((offset) => {
                   const itemIndex = (currentIndex + offset) % totalItems;
@@ -192,6 +195,7 @@ export function AlianzaCarousel({
                     >
                       <AnnouncementCard
                         ad={ad}
+                        index={offset}
                         onViewFull={onViewFull}
                         isFavorite={isFavorite ? isFavorite(ad) : false}
                         onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(ad) : undefined}

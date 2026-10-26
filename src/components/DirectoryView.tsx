@@ -738,6 +738,7 @@ export default function DirectoryView({
               >
                 <AnnouncementCard
                   ad={ad}
+                  index={idx}
                   isDiamonds={false}
                   isFavorite={isFavorite ? isFavorite(ad) : false}
                   onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(ad) : undefined}

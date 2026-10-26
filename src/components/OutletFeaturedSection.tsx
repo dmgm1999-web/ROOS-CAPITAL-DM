@@ -314,13 +314,98 @@ export function BrandLogoBadge({ brand }: { brand: OutletBrandItem }) {
   );
 }
 
+const INITIAL_SEEDED_BANNERS: OutletBannerItem[] = [
+  {
+    id: '0B000',
+    empresa: 'Expedia',
+    imagen: 'https://images.unsplash.com/photo-1771658340868-af8f307d5b0e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D',
+    precio: 'Desde $950 MXN',
+    descripcion: 'Hotel, Vuelo o Ambos',
+    promo: '%20 OFF',
+    web: 'https://expedia.stay22.com/rooscapital/Lr8Z-tm0w4',
+    categoria: 'Turismo',
+    gradientTheme: 'pink'
+  },
+  {
+    id: '0B001',
+    empresa: 'Booking .com',
+    imagen: 'https://images.unsplash.com/photo-1664391962122-34e56b77e859?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D',
+    precio: 'Desde $349 MXN',
+    descripcion: 'Precio por noche',
+    promo: '%15 OFF',
+    web: 'https://booking.stay22.com/rooscapital/5BHIGD14Hi',
+    categoria: 'Turismo',
+    gradientTheme: 'peach'
+  },
+  {
+    id: '0B002',
+    empresa: 'Hoteles .com',
+    imagen: 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D',
+    precio: 'Desde $981 MXN',
+    descripcion: 'Hoteles',
+    promo: '%20 OFF',
+    web: 'https://hotelscom.stay22.com/rooscapital/4MyfdgkkMY',
+    categoria: 'Turismo',
+    gradientTheme: 'rose'
+  }
+];
+
+const INITIAL_SEEDED_BRANDS: OutletBrandItem[] = [
+  { id: '0B000', empresa: 'Adidas', logo: '', categoria: 'Moda', web: 'https://mavely.app.link/wlyOoBdvs7b' },
+  { id: '0B001', empresa: 'Babor', logo: '', categoria: 'Cuidado Personal', web: 'https://mavely.app.link/9ns8kRTeu7b' },
+  { id: '0B002', empresa: 'Alo', logo: '', categoria: 'Moda', web: 'https://mavely.app.link/N1uUWZReu7b' },
+  { id: '0B003', empresa: 'Bath and Body Works', logo: '', categoria: 'Cuidado Personal', web: 'https://mavely.app.link/wRp9HsVeu7b' },
+  { id: '0B004', empresa: 'DKNY', logo: '', categoria: 'Moda', web: 'https://mavely.app.link/z8rAq3Weu7b' },
+  { id: '0B005', empresa: 'Under Armour', logo: '', categoria: 'Moda', web: 'https://mavely.app.link/X4Qkh8Yeu7b' },
+  { id: '0B006', empresa: 'UGG', logo: '', categoria: 'Moda', web: 'https://mavely.app.link/RMYiJ10eu7b' },
+  { id: '0B007', empresa: 'Sol de Janeiro', logo: '', categoria: 'Cuidado Personal', web: 'https://mavely.app.link/PbmEDv2eu7b' },
+  { id: '0B008', empresa: 'SHEGLAM', logo: '', categoria: 'Maquillaje', web: 'https://mavely.app.link/MmcHUp4eu7b' },
+  { id: '0B009', empresa: 'SAVAGE X FENTY', logo: '', categoria: 'Moda', web: 'https://mavely.app.link/nvNVuL6eu7b' },
+  { id: '0B010', empresa: 'Old Navy', logo: '', categoria: 'Moda', web: 'https://mavely.app.link/xztPug8eu7b' },
+  { id: '0B011', empresa: 'Nike', logo: '', categoria: 'Moda', web: 'https://mavely.app.link/3ocSO49eu7b' },
+  { id: '0B012', empresa: 'NARS', logo: '', categoria: 'Maquillaje', web: 'https://mavely.app.link/q27MiDbfu7b' },
+  { id: '0B013', empresa: 'MAC', logo: '', categoria: 'Maquillaje', web: 'https://mavely.app.link/CRQjEhdfu7b' },
+  { id: '0B014', empresa: 'Glossier', logo: '', categoria: 'Maquillaje', web: 'https://mavely.app.link/E7Oaclffu7b' }
+];
+
+let memoryBannersCache: OutletBannerItem[] = INITIAL_SEEDED_BANNERS;
+let memoryBrandsCache: OutletBrandItem[] = INITIAL_SEEDED_BRANDS;
+
 interface OutletFeaturedSectionProps {
   language?: 'es' | 'en';
 }
 
 export function OutletFeaturedSection({ language = 'es' }: OutletFeaturedSectionProps) {
-  const [banners, setBanners] = useState<OutletBannerItem[]>([]);
-  const [brands, setBrands] = useState<OutletBrandItem[]>([]);
+  const [banners, setBanners] = useState<OutletBannerItem[]>(() => {
+    if (memoryBannersCache && memoryBannersCache.length > 0) return memoryBannersCache;
+    try {
+      const cached = localStorage.getItem('roos_outlet_banners_cache_v2');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          memoryBannersCache = parsed;
+          return parsed;
+        }
+      }
+    } catch (e) {}
+    return INITIAL_SEEDED_BANNERS;
+  });
+
+  const [brands, setBrands] = useState<OutletBrandItem[]>(() => {
+    if (memoryBrandsCache && memoryBrandsCache.length > 0) return memoryBrandsCache;
+    try {
+      const cached = localStorage.getItem('roos_outlet_brands_cache_v2');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          memoryBrandsCache = parsed;
+          return parsed;
+        }
+      }
+    } catch (e) {}
+    return INITIAL_SEEDED_BRANDS;
+  });
+
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
   const [isBrandsExpanded, setIsBrandsExpanded] = useState(false);
@@ -340,8 +425,16 @@ export function OutletFeaturedSection({ language = 'es' }: OutletFeaturedSection
           const parsedBanners = parseP5Banners(p5Csv);
           const parsedBrands = parseP6Brands(p6Csv);
 
-          if (parsedBanners.length > 0) setBanners(parsedBanners);
-          if (parsedBrands.length > 0) setBrands(parsedBrands);
+          if (parsedBanners.length > 0) {
+            memoryBannersCache = parsedBanners;
+            try { localStorage.setItem('roos_outlet_banners_cache_v2', JSON.stringify(parsedBanners)); } catch (e) {}
+            setBanners(parsedBanners);
+          }
+          if (parsedBrands.length > 0) {
+            memoryBrandsCache = parsedBrands;
+            try { localStorage.setItem('roos_outlet_brands_cache_v2', JSON.stringify(parsedBrands)); } catch (e) {}
+            setBrands(parsedBrands);
+          }
         }
       } catch (err) {}
     }
@@ -406,54 +499,52 @@ export function OutletFeaturedSection({ language = 'es' }: OutletFeaturedSection
                     className={`relative rounded-3xl p-6 sm:p-8 text-white overflow-hidden cursor-pointer shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 group min-h-[220px] sm:min-h-[250px] flex flex-col justify-between ${
                       offset === 1 ? 'hidden md:flex' : 'flex'
                     } ${
-                      isPink 
-                        ? 'bg-gradient-to-br from-[#E85B81] via-[#E24C74] to-[#C8345C]' 
-                        : 'bg-gradient-to-br from-[#EE9B60] via-[#E68A4E] to-[#D37336]'
+                      banner.imagen
+                        ? 'bg-neutral-900'
+                        : isPink 
+                          ? 'bg-gradient-to-br from-[#E85B81] via-[#E24C74] to-[#C8345C]' 
+                          : 'bg-gradient-to-br from-[#EE9B60] via-[#E68A4E] to-[#D37336]'
                     }`}
                   >
-                    {/* Background photo overlay if present */}
+                    {/* Background photo without colored overlay */}
                     {banner.imagen && (
                       <>
                         <img 
                           src={getOptimizedImageUrl(banner.imagen)}
                           alt={banner.empresa}
-                          className="absolute inset-0 w-full h-full object-cover object-center opacity-30 mix-blend-overlay group-hover:scale-105 transition-transform duration-700 ease-out pointer-events-none"
+                          className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out pointer-events-none"
                         />
-                        <div className={`absolute inset-0 opacity-80 ${
-                          isPink 
-                            ? 'bg-gradient-to-t from-[#B82B53] via-transparent to-black/20' 
-                            : 'bg-gradient-to-t from-[#B35216] via-transparent to-black/20'
-                        }`} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
                       </>
                     )}
 
                     {/* Content */}
                     <div className="relative z-10 flex flex-col items-start max-w-md">
                       {/* Kicker */}
-                      <span className="text-[11px] sm:text-xs font-sans font-bold uppercase tracking-wider text-white/90 mb-1">
+                      <span className="text-[11px] sm:text-xs font-sans font-bold uppercase tracking-wider text-white/95 mb-1 drop-shadow-md">
                         {language === 'en' ? 'Exclusive Deals' : 'Solo rebajas'}
                       </span>
 
                       {/* Main Title */}
-                      <h3 className="font-serif text-3xl sm:text-4xl lg:text-[42px] font-bold text-white tracking-tight leading-[1.08] mb-1.5 drop-shadow-xs">
+                      <h3 className="font-serif text-3xl sm:text-4xl lg:text-[42px] font-bold text-white tracking-tight leading-[1.08] mb-1.5 drop-shadow-md">
                         {banner.empresa}
                       </h3>
 
                       {/* Subtitle / Description */}
                       {banner.descripcion && (
-                        <p className="text-xs sm:text-sm text-white/95 font-sans font-medium mb-1">
+                        <p className="text-xs sm:text-sm text-white font-sans font-medium mb-1 drop-shadow-md">
                           {banner.descripcion}
                         </p>
                       )}
 
                       {/* Promo or Price highlight */}
                       {(banner.promo || banner.precio) && (
-                        <p className="text-base sm:text-lg lg:text-xl font-sans font-extrabold text-white tracking-tight drop-shadow-xs mb-4">
+                        <p className="text-base sm:text-lg lg:text-xl font-sans font-extrabold text-white tracking-tight drop-shadow-md mb-4">
                           {banner.promo ? (
                             <span>{banner.promo.includes('hasta') ? banner.promo : `hasta ${banner.promo} menos`}</span>
                           ) : null}
                           {banner.precio && (
-                            <span className={banner.promo ? 'ml-2 text-white/90 font-bold text-sm sm:text-base' : ''}>
+                            <span className={banner.promo ? 'ml-2 text-white/95 font-bold text-sm sm:text-base' : ''}>
                               {banner.precio}
                             </span>
                           )}
@@ -461,16 +552,17 @@ export function OutletFeaturedSection({ language = 'es' }: OutletFeaturedSection
                       )}
                     </div>
 
-                    {/* White Pill Button: "Ver oferta" */}
+                    {/* White Pill Button: "Ver Oferta" */}
                     <div className="relative z-10 pt-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleOpenLink(banner.web);
                         }}
-                        className="px-6 py-2.5 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer"
+                        className="px-6 py-2.5 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer inline-flex items-center justify-center gap-2"
                       >
-                        {language === 'en' ? 'View offer' : 'Ver oferta'}
+                        <span>{language === 'en' ? 'View' : 'Ver'}</span>
+                        <span>{language === 'en' ? 'Offer' : 'Oferta'}</span>
                       </button>
                     </div>
 
@@ -517,8 +609,8 @@ export function OutletFeaturedSection({ language = 'es' }: OutletFeaturedSection
           <div className="flex items-center justify-between gap-3 px-1">
             <h2 className="font-serif text-xl sm:text-2xl md:text-3xl font-extrabold text-[#18181B] tracking-tight">
               {language === 'en' 
-                ? 'Your favorite brands, discounted for a limited time' 
-                : 'Tus marcas favoritas, rebajadas por poco tiempo'}
+                ? 'Your favorite brands with exceptional discounts' 
+                : 'Tus marcas favoritas con descuentos excepcionales'}
             </h2>
 
             <button

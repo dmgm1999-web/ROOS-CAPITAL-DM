@@ -19,6 +19,227 @@ import RoosLogo from './RoosLogo';
 import { useLanguage } from '../context/LanguageContext';
 import { playDiamondSound } from '../App';
 
+// Halloween Cute Ghost SVG for Spotlight Banner Corner (replaces witch hat with same size)
+export function SpotlightGhost({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 200 200"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <defs>
+        {/* Ghost Body Gradient - Celeste / Sky Blue */}
+        <linearGradient id="ghostBodyGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="50%" stopColor="#E0F2FE" />
+          <stop offset="100%" stopColor="#7DD3FC" />
+        </linearGradient>
+        {/* Soft Celeste Ethereal Glow */}
+        <filter id="ghostSoftGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#0284C7" floodOpacity="0.3" />
+        </filter>
+        <radialGradient id="ghostCheek" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#F472B6" stopOpacity="0.6" />
+          <stop offset="100%" stopColor="#F472B6" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      {/* Floating Magic Stars/Sparkles in Celeste and Gold */}
+      <circle cx="165" cy="45" r="2.5" fill="#FFE066" className="animate-pulse" />
+      <circle cx="40" cy="55" r="2" fill="#38BDF8" />
+      <polygon points="172,32 174,37 179,38 174,39 172,44 170,39 165,38 170,37" fill="#FFE066" />
+      <polygon points="32,70 33.5,74 38,75 33.5,76 32,80 30.5,76 26,75 30.5,74" fill="#38BDF8" />
+
+      {/* Floating Shadow Under Ghost */}
+      <ellipse cx="102" cy="182" rx="42" ry="9" fill="rgba(14, 165, 233, 0.18)" filter="blur(4px)" />
+
+      {/* Ghost Silhouette with Waving Arms and Ruffled Skirt Tail */}
+      <g filter="url(#ghostSoftGlow)">
+        <path
+          d="M 100 24
+             C 65 24, 48 52, 48 85
+             C 48 95, 36 100, 24 106
+             C 18 109, 17 117, 24 122
+             C 34 128, 48 122, 53 114
+             C 54 124, 52 142, 54 156
+             C 55 166, 62 172, 72 165
+             C 80 159, 86 161, 92 167
+             C 100 175, 108 173, 114 165
+             C 120 159, 126 160, 134 167
+             C 142 173, 150 166, 150 156
+             C 152 140, 150 124, 152 110
+             C 160 118, 172 124, 180 118
+             C 186 113, 184 104, 176 100
+             C 164 94, 152 92, 152 82
+             C 152 50, 135 24, 100 24
+             Z"
+          fill="url(#ghostBodyGrad)"
+          stroke="#7DD3FC"
+          strokeWidth="2"
+        />
+
+        {/* Rosy Pink Cheeks */}
+        <ellipse cx="76" cy="98" rx="8" ry="4.5" fill="url(#ghostCheek)" />
+        <ellipse cx="126" cy="98" rx="8" ry="4.5" fill="url(#ghostCheek)" />
+
+        {/* Cute Big Spooky Eyes */}
+        <ellipse cx="80" cy="84" rx="7.5" ry="10.5" fill="#18181B" transform="rotate(-3 80 84)" />
+        <ellipse cx="122" cy="84" rx="7.5" ry="10.5" fill="#18181B" transform="rotate(3 122 84)" />
+        {/* Eye Catchlights */}
+        <circle cx="82.5" cy="80.5" r="3" fill="#FFFFFF" />
+        <circle cx="78" cy="88" r="1.5" fill="#FFFFFF" />
+        <circle cx="124.5" cy="80.5" r="3" fill="#FFFFFF" />
+        <circle cx="120" cy="88" r="1.5" fill="#FFFFFF" />
+
+        {/* Happy Spooky Open Mouth */}
+        <ellipse cx="101" cy="102" rx="6.5" ry="9" fill="#18181B" />
+        {/* Cute Pink Tongue */}
+        <path
+          d="M 97 105 Q 101 110 105 105 Q 105 109 101 110 Q 97 109 97 105 Z"
+          fill="#E85B81"
+        />
+      </g>
+    </svg>
+  );
+}
+
+// Halloween Super Kawaii Cute Pumpkin SVG for Spotlight Banner Corner (matches SpotlightGhost)
+export function SpotlightPumpkin({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 200 200"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <defs>
+        <radialGradient id="kawaiiSpotlightPumpGrad" cx="50%" cy="40%" r="65%">
+          <stop offset="0%" stopColor="#FFA63D" />
+          <stop offset="60%" stopColor="#FF7A00" />
+          <stop offset="100%" stopColor="#EA580C" />
+        </radialGradient>
+        <radialGradient id="kawaiiSpotlightPumpCheek" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#E85B81" stopOpacity="0.65" />
+          <stop offset="100%" stopColor="#E85B81" stopOpacity="0" />
+        </radialGradient>
+        <filter id="kawaiiSpotlightPumpSoftGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#EA580C" floodOpacity="0.3" />
+        </filter>
+      </defs>
+
+      {/* Floating Magic Stars/Sparkles matching SpotlightGhost */}
+      <circle cx="35" cy="45" r="2.5" fill="#FFE066" className="animate-pulse" />
+      <circle cx="165" cy="65" r="2" fill="#E85B81" />
+      <polygon points="30,68 31.5,72 36,73 31.5,74 30,78 28.5,74 24,73 28.5,72" fill="#FFE066" />
+      <polygon points="168,48 169.5,52 174,53 169.5,54 168,58 166.5,54 162,53 166.5,52" fill="#F472B6" />
+
+      {/* Floating Soft Shadow */}
+      <ellipse cx="100" cy="184" rx="46" ry="10" fill="rgba(234, 88, 12, 0.16)" filter="blur(4px)" />
+
+      {/* Cute Twisted Green Stem and Little Leaf */}
+      <path
+        d="M 98 48 
+           C 96 28, 108 14, 126 10 
+           C 122 18, 116 26, 110 46 
+           Z"
+        fill="#2E7D32"
+        stroke="#1B5E20"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      {/* Cute little green leaf */}
+      <path
+        d="M 112 40 C 124 30, 138 34, 140 44 C 132 46, 120 45, 112 40 Z"
+        fill="#4CAF50"
+        stroke="#2E7D32"
+        strokeWidth="1.2"
+      />
+      {/* Curling green tendril */}
+      <path
+        d="M 108 44 Q 120 38 126 46 Q 130 52 122 55 Q 116 56 119 50"
+        stroke="#4CAF50"
+        strokeWidth="2"
+        strokeLinecap="round"
+        fill="none"
+      />
+
+      {/* Plump Chubby Pumpkin Body */}
+      <g filter="url(#kawaiiSpotlightPumpSoftGlow)">
+        {/* Outer Left Lobe */}
+        <ellipse cx="58" cy="118" rx="36" ry="50" fill="url(#kawaiiSpotlightPumpGrad)" stroke="#C2410C" strokeWidth="2" />
+        {/* Outer Right Lobe */}
+        <ellipse cx="142" cy="118" rx="36" ry="50" fill="url(#kawaiiSpotlightPumpGrad)" stroke="#C2410C" strokeWidth="2" />
+        {/* Mid Left Lobe */}
+        <ellipse cx="78" cy="120" rx="35" ry="54" fill="url(#kawaiiSpotlightPumpGrad)" stroke="#C2410C" strokeWidth="2" />
+        {/* Mid Right Lobe */}
+        <ellipse cx="122" cy="120" rx="35" ry="54" fill="url(#kawaiiSpotlightPumpGrad)" stroke="#C2410C" strokeWidth="2" />
+        {/* Central Lobe */}
+        <ellipse cx="100" cy="122" rx="36" ry="56" fill="url(#kawaiiSpotlightPumpGrad)" stroke="#C2410C" strokeWidth="2.5" />
+
+        {/* Rosy Kawaii Pink Blushing Cheeks with Anime Blush Lines */}
+        <ellipse cx="68" cy="130" rx="10" ry="5.5" fill="url(#kawaiiSpotlightPumpCheek)" />
+        <ellipse cx="132" cy="130" rx="10" ry="5.5" fill="url(#kawaiiSpotlightPumpCheek)" />
+        <line x1="64" y1="128" x2="67" y2="132" stroke="#E85B81" strokeWidth="1.6" strokeLinecap="round" />
+        <line x1="68" y1="128" x2="71" y2="132" stroke="#E85B81" strokeWidth="1.6" strokeLinecap="round" />
+        <line x1="129" y1="128" x2="132" y2="132" stroke="#E85B81" strokeWidth="1.6" strokeLinecap="round" />
+        <line x1="133" y1="128" x2="136" y2="132" stroke="#E85B81" strokeWidth="1.6" strokeLinecap="round" />
+
+        {/* Playful Eyebrows */}
+        <path d="M 66 104 Q 75 99 84 103" stroke="#7C2D12" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+        <path d="M 116 104 Q 125 99 134 103" stroke="#7C2D12" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+
+        {/* Left Eye: Big Radiant Anime Eye with Star & Highlights */}
+        <ellipse cx="75" cy="115" rx="8.5" ry="11.5" fill="#18181B" transform="rotate(-2 75 115)" />
+        <path d="M 65 109 Q 75 103 85 108" stroke="#18181B" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+        <path d="M 83 108 L 87 105" stroke="#18181B" strokeWidth="2" strokeLinecap="round" />
+        {/* Main catchlight */}
+        <circle cx="78" cy="111" r="3.4" fill="#FFFFFF" />
+        {/* Secondary light */}
+        <circle cx="72.5" cy="119" r="1.8" fill="#FFFFFF" />
+        {/* Cute star shine sparkle */}
+        <polygon points="78,114.5 79,116 80.5,117 79,118 78,119.5 77,118 75.5,117 77,116" fill="#FFFFFF" opacity="0.9" />
+
+        {/* Right Eye: Playful Cheerful Wink with Cute Eyelashes */}
+        <path d="M 115 118 Q 125 108 135 118" stroke="#18181B" strokeWidth="3.6" strokeLinecap="round" fill="none" />
+        <path d="M 133 116 L 139 112" stroke="#18181B" strokeWidth="2.6" strokeLinecap="round" />
+        <path d="M 129 111 L 134 106" stroke="#18181B" strokeWidth="2.2" strokeLinecap="round" />
+
+        {/* Tiny Sweet Rounded Jack-o'-Lantern Nose */}
+        <path d="M 97.5 121 L 102.5 121 L 100 125 Z" fill="#18181B" stroke="#18181B" strokeWidth="0.8" strokeLinejoin="round" />
+
+        {/* Cheerful Kawaii Open Mouth with Baby Fangs & Pink Tongue */}
+        <path
+          d="M 88 128 Q 100 146 112 128 Z"
+          fill="#18181B"
+        />
+        <path
+          d="M 88 128 Q 100 146 112 128"
+          stroke="#18181B"
+          strokeWidth="3.2"
+          strokeLinecap="round"
+          fill="none"
+        />
+        {/* Dimple accents at smile corners */}
+        <path d="M 87 127 C 86 125, 87 124, 89 125" stroke="#18181B" strokeWidth="2" strokeLinecap="round" fill="none" />
+        <path d="M 113 127 C 114 125, 113 124, 111 125" stroke="#18181B" strokeWidth="2" strokeLinecap="round" fill="none" />
+
+        {/* Two Tiny Cute White Baby Jack-o'-Lantern Fangs */}
+        <polygon points="91.5,128 94,133.5 96.5,128" fill="#FFFFFF" />
+        <polygon points="103.5,128 106,133.5 108.5,128" fill="#FFFFFF" />
+
+        {/* Adorable Pink Tongue */}
+        <path
+          d="M 94 137 Q 100 144 106 137 Q 106 142 100 144 Q 94 142 94 137 Z"
+          fill="#FF5E8E"
+        />
+      </g>
+    </svg>
+  );
+}
+
 interface HeroSectionProps {
   spotlightImages: string[];
   isRegisterOpen?: boolean;
@@ -342,15 +563,47 @@ export function HeroSection({
             {/* Spotlight Banner Container */}
             <div className="relative w-full max-w-[880px] lg:max-w-[960px] xl:max-w-[1040px] px-0 sm:px-1 py-4 sm:py-6">
               
-              {/* Central Featured Element: SPOTLIGHT BANNER EMBEDDED */}
-              <div className="relative z-10 w-full max-w-[860px] lg:max-w-[940px] xl:max-w-[1020px] mx-auto rounded-3xl md:rounded-[2.5rem] overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.14)] border-4 sm:border-8 border-white bg-white">
-                <SpotlightBanner
-                  images={spotlightImages}
-                  isRegisterOpen={isRegisterOpen}
-                  onRegisterOpenChange={onRegisterOpenChange}
-                  containerClassName="w-full relative"
-                  className="relative w-full overflow-hidden bg-neutral-950 aspect-[16/9] select-none group isolate"
-                />
+              <div className="relative w-full max-w-[860px] lg:max-w-[940px] xl:max-w-[1020px] mx-auto">
+                {/* Halloween Cute Ghost: Esquina superior derecha del banner spotlight (mismo tamaño) */}
+                <div className="absolute -top-6 sm:-top-8 md:-top-10 lg:-top-12 -right-3 sm:-right-5 md:-right-7 lg:-right-9 z-20 pointer-events-none select-none">
+                  <motion.div
+                    initial={{ scale: 0.95, rotate: 6 }}
+                    animate={{ 
+                      scale: [1, 1.05, 1], 
+                      rotate: [4, 9, 4],
+                      y: [0, -4, 0]
+                    }}
+                    transition={{ repeat: Infinity, duration: 4.2, ease: "easeInOut" }}
+                  >
+                    <SpotlightGhost className="w-18 h-18 sm:w-22 sm:h-22 md:w-26 md:h-26 lg:w-30 lg:h-30 drop-shadow-[0_12px_24px_rgba(14,165,233,0.38)]" />
+                  </motion.div>
+                </div>
+
+                {/* Halloween Jack-o'-Lantern: Esquina inferior izquierda del banner spotlight (del mismo tamaño exacto del corazón flotante) */}
+                <div className="absolute -bottom-6 sm:-bottom-8 lg:-bottom-10 -left-4 sm:-left-6 lg:-left-8 xl:-left-10 z-20 pointer-events-none select-none">
+                  <motion.div
+                    initial={{ scale: 0.95, rotate: -10 }}
+                    animate={{ 
+                      scale: [1, 1.04, 1], 
+                      rotate: [-12, -7, -12],
+                      y: [0, -4, 0]
+                    }}
+                    transition={{ repeat: Infinity, duration: 4.5, ease: "easeInOut" }}
+                  >
+                    <SpotlightPumpkin className="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 xl:w-34 xl:h-34 drop-shadow-[0_10px_26px_rgba(234,88,12,0.42)]" />
+                  </motion.div>
+                </div>
+
+                {/* Central Featured Element: SPOTLIGHT BANNER EMBEDDED */}
+                <div className="relative z-10 w-full rounded-3xl md:rounded-[2.5rem] overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.14)] border-4 sm:border-8 border-white bg-white">
+                  <SpotlightBanner
+                    images={spotlightImages}
+                    isRegisterOpen={isRegisterOpen}
+                    onRegisterOpenChange={onRegisterOpenChange}
+                    containerClassName="w-full relative"
+                    className="relative w-full overflow-hidden bg-neutral-950 aspect-[16/9] select-none group isolate"
+                  />
+                </div>
               </div>
 
             </div>

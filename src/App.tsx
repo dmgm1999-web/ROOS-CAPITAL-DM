@@ -61,6 +61,7 @@ import { HeroSection } from './components/HeroSection';
 import { AutocroppedLogo } from './components/AutocroppedLogo';
 import LoginModal from './components/LoginModal';
 import CursorAura from './components/CursorAura';
+import PhosphorSpiders from './components/PhosphorSpiders';
 import { getCountryInfo, interleaveAnnouncementsByCountry, CountryFlag, translateCountryName } from './utils/countryUtils';
 import { getCanonicalCategory } from './utils/categoryUtils';
 import FundadorasTicker, { hasAnuncioImage } from './components/FundadorasTicker';
@@ -1816,51 +1817,6 @@ export default function App() {
     return ['Todas', ...Array.from(new Set(cats))];
   }, [activeAnnouncements]);
 
-  // --- TYPEWRITER PLACEHOLDER ANIMATION ---
-  const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [typingText, setTypingText] = useState('');
-
-  const registeredCategories = React.useMemo(() => {
-    const catsOnly = categories.filter(c => c !== 'Todas');
-    return catsOnly.length > 0 
-      ? catsOnly 
-      : ['Música', 'Alimentos', 'Decoración', 'Espacios', 'Fotografía', 'Maquillaje'];
-  }, [categories]);
-
-  useEffect(() => {
-    if (registeredCategories.length === 0) return;
-    
-    let timer: NodeJS.Timeout;
-    const currentWord = registeredCategories[currentCategoryIndex % registeredCategories.length];
-    
-    if (isDeleting) {
-      timer = setTimeout(() => {
-        setTypingText(prev => prev.slice(0, -1));
-      }, 50); // fast erase
-    } else {
-      timer = setTimeout(() => {
-        setTypingText(currentWord.slice(0, typingText.length + 1));
-      }, 90); // typing speed
-    }
-
-    if (!isDeleting && typingText === currentWord) {
-      // Done writing! Wait 3.3 seconds before starting deletion
-      timer = setTimeout(() => {
-        setIsDeleting(true);
-      }, 3300);
-    } else if (isDeleting && typingText === '') {
-      // Finished deleting! Move to next word immediately
-      timer = setTimeout(() => {
-        setIsDeleting(false);
-        setCurrentCategoryIndex(prev => prev + 1);
-      }, 150);
-    }
-
-    return () => clearTimeout(timer);
-  }, [typingText, isDeleting, currentCategoryIndex, registeredCategories]);
-
-  const animatedPlaceholder = `Busca ${typingText}...`;
 
   // Parse active announcements through location helper or direct Google Sheet fields
   const parsedLocations = React.useMemo(() => {
@@ -2392,6 +2348,8 @@ export default function App() {
     >
       {/* Pink Aura Light at Cursor Tip */}
       <CursorAura />
+      {/* Phosphor Green Walking Spiders with Asynchronous 28s Cobweb Patterns */}
+      <PhosphorSpiders />
       {/* Top Navigation & Hero Section matching the new aesthetic */}
       <HeroSection
         spotlightImages={activeSpotlightImages}
