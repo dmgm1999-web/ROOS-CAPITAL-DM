@@ -61,7 +61,6 @@ import { HeroSection } from './components/HeroSection';
 import { AutocroppedLogo } from './components/AutocroppedLogo';
 import LoginModal from './components/LoginModal';
 import CursorAura from './components/CursorAura';
-import PhosphorSpiders from './components/PhosphorSpiders';
 import { getCountryInfo, interleaveAnnouncementsByCountry, CountryFlag, translateCountryName } from './utils/countryUtils';
 import { getCanonicalCategory } from './utils/categoryUtils';
 import FundadorasTicker, { hasAnuncioImage } from './components/FundadorasTicker';
@@ -2348,8 +2347,6 @@ export default function App() {
     >
       {/* Pink Aura Light at Cursor Tip */}
       <CursorAura />
-      {/* Phosphor Green Walking Spiders with Asynchronous 28s Cobweb Patterns */}
-      <PhosphorSpiders />
       {/* Top Navigation & Hero Section matching the new aesthetic */}
       <HeroSection
         spotlightImages={activeSpotlightImages}

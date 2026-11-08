@@ -277,14 +277,13 @@ function ScratchCardItem({
         </div>
       )}
 
-      {/* The EXACT Directory Card - clean without halloween peeking characters in scratch and discover */}
+      {/* The EXACT Directory Card */}
       <div className="w-full h-full">
         <AnnouncementCard 
           ad={ad}
           isDiamonds={false}
           isFavorite={isFavorite}
           onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(ad) : undefined}
-          hideHalloweenPeeking={true}
         />
       </div>
 

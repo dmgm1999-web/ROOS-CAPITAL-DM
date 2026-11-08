@@ -244,7 +244,7 @@ export function DirectoryCarousel({
             </div>
           </div>
 
-          {/* Carousel Cards Viewport (overflow-visible with padding so peeking characters are fully shown) */}
+          {/* Carousel Cards Viewport */}
           <div className="w-full overflow-visible py-3 sm:py-4 px-1 sm:px-2">
             {/* Mobile View: 1 card active with slide animation */}
             <div className="block sm:hidden">
